@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, Shield, ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { useAuth } from "@/hooks/useAuth"
+import { useRouter } from "next/navigation"
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -22,36 +22,37 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [showTwoFA, setShowTwoFA] = useState(false)
   const [twoFACode, setTwoFACode] = useState("")
-  const { login } = useAuth()
+  const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError("")
 
-    const result = await login(email, password)
-    
-    if (result.requiresTwoFactor) {
-      setShowTwoFA(true)
-    } else if (!result.success) {
-      setError(result.error || "Login failed")
-    }
-    
-    setIsLoading(false)
+    // Simulate login process
+    setTimeout(() => {
+      if (email === "demo@flex.ia" && password === "demo123") {
+        setShowTwoFA(true)
+      } else {
+        setError("Invalid email or password")
+      }
+      setIsLoading(false)
+    }, 1000)
   }
 
   const handleTwoFA = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    setError("")
 
-    const result = await login(email, password, twoFACode)
-    
-    if (!result.success) {
-      setError(result.error || "Invalid 2FA code")
-    }
-    
-    setIsLoading(false)
+    // Simulate 2FA verification
+    setTimeout(() => {
+      if (twoFACode === "123456") {
+        router.push("/dashboard")
+      } else {
+        setError("Invalid 2FA code")
+      }
+      setIsLoading(false)
+    }, 1000)
   }
 
   if (showTwoFA) {
