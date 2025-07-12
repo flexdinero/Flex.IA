@@ -9,13 +9,14 @@ import type {
 } from "@/components/ui/toast"
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_REMOVE_DELAY = 5000
 
 type ToasterToast = ToastProps & {
   id: string
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
+  timerId?: ReturnType<typeof setTimeout>
 }
 
 const actionTypes = {
@@ -56,30 +57,38 @@ interface State {
   toasts: ToasterToast[]
 }
 
-const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
-
-const addToRemoveQueue = (toastId: string) => {
-  if (toastTimeouts.has(toastId)) {
-    return
+const manageToastTimer = (toast: ToasterToast, action: 'start' | 'clear') => {
+  if (action === 'clear' && toast.timerId) {
+    clearTimeout(toast.timerId)
+    return { ...toast, timerId: undefined }
   }
-
-  const timeout = setTimeout(() => {
-    toastTimeouts.delete(toastId)
-    dispatch({
-      type: "REMOVE_TOAST",
-      toastId: toastId,
-    })
-  }, TOAST_REMOVE_DELAY)
-
-  toastTimeouts.set(toastId, timeout)
+  
+  if (action === 'start') {
+    // Clear existing timer if any
+    if (toast.timerId) {
+      clearTimeout(toast.timerId)
+    }
+    
+    const timerId = setTimeout(() => {
+      dispatch({
+        type: "REMOVE_TOAST",
+        toastId: toast.id,
+      })
+    }, TOAST_REMOVE_DELAY)
+    
+    return { ...toast, timerId }
+  }
+  
+  return toast
 }
 
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "ADD_TOAST":
+      const toastWithTimer = manageToastTimer(action.toast, 'start')
       return {
         ...state,
-        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
+        toasts: [toastWithTimer, ...state.toasts].slice(0, TOAST_LIMIT),
       }
 
     case "UPDATE_TOAST":
@@ -93,22 +102,12 @@ export const reducer = (state: State, action: Action): State => {
     case "DISMISS_TOAST": {
       const { toastId } = action
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
-      if (toastId) {
-        addToRemoveQueue(toastId)
-      } else {
-        state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id)
-        })
-      }
-
       return {
         ...state,
         toasts: state.toasts.map((t) =>
           t.id === toastId || toastId === undefined
             ? {
-                ...t,
+                ...manageToastTimer(t, 'clear'),
                 open: false,
               }
             : t
@@ -117,11 +116,23 @@ export const reducer = (state: State, action: Action): State => {
     }
     case "REMOVE_TOAST":
       if (action.toastId === undefined) {
+        // Clear all timers
+        state.toasts.forEach(toast => {
+          if (toast.timerId) {
+            clearTimeout(toast.timerId)
+          }
+        })
         return {
           ...state,
           toasts: [],
         }
       }
+      
+      const toastToRemove = state.toasts.find(t => t.id === action.toastId)
+      if (toastToRemove?.timerId) {
+        clearTimeout(toastToRemove.timerId)
+      }
+      
       return {
         ...state,
         toasts: state.toasts.filter((t) => t.id !== action.toastId),
@@ -181,6 +192,13 @@ function useToast() {
       if (index > -1) {
         listeners.splice(index, 1)
       }
+      
+      // Clear all active toast timers on unmount
+      state.toasts.forEach(toast => {
+        if (toast.timerId) {
+          clearTimeout(toast.timerId)
+        }
+      })
     }
   }, [state])
 
