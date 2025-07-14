@@ -49,6 +49,7 @@ export default function ClaimsPage() {
   const [selectedType, setSelectedType] = useState("all")
   const [selectedClaim, setSelectedClaim] = useState<any>(null)
   const [activeTab, setActiveTab] = useState("all-claims")
+  const [activeTab, setActiveTab] = useState("available-claims")
 
   // All claims data (available + in progress + completed)
   const allClaims = [
@@ -233,7 +234,11 @@ export default function ClaimsPage() {
   const getFilteredClaims = () => {
     let claims = allClaims
 
-    if (activeTab === "available") {
+    if (activeTab === "available-claims") {
+      claims = allClaims
+    } else if (activeTab === "my-claims") {
+      claims = allClaims.filter((claim) => claim.status === "Available" || claim.status === "In Progress")
+    } else if (activeTab === "available") {
       claims = allClaims.filter((claim) => claim.status === "Available")
     } else if (activeTab === "in-progress") {
       claims = allClaims.filter((claim) => claim.status === "In Progress")
@@ -318,7 +323,8 @@ export default function ClaimsPage() {
   // Calculate stats
   const stats = {
     totalClaims: allClaims.length,
-    availableClaims: allClaims.filter((c) => c.status === "Available").length,
+    availableClaims: allClaims.length,
+    myClaims: allClaims.filter((c) => c.status === "Available" || c.status === "In Progress").length,
     inProgressClaims: allClaims.filter((c) => c.status === "In Progress").length,
     completedClaims: allClaims.filter((c) => c.status === "Completed").length,
     totalEarnings: completedClaims.reduce(
@@ -489,17 +495,17 @@ export default function ClaimsPage() {
         {/* Claims Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="all-claims">All Claims ({allClaims.length})</TabsTrigger>
-            <TabsTrigger value="available">Available ({stats.availableClaims})</TabsTrigger>
+            <TabsTrigger value="available-claims">Available Claims ({stats.availableClaims})</TabsTrigger>
+            <TabsTrigger value="my-claims">My Claims ({stats.myClaims})</TabsTrigger>
             <TabsTrigger value="in-progress">In Progress ({stats.inProgressClaims})</TabsTrigger>
             <TabsTrigger value="completed">Completed ({stats.completedClaims})</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="all-claims" className="space-y-4">
+          <TabsContent value="available-claims" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>All Claims ({filteredClaims.length})</CardTitle>
-                <CardDescription>Complete overview of all claims from connected firms</CardDescription>
+                <CardTitle>Available Claims ({filteredClaims.length})</CardTitle>
+                <CardDescription>All available claims from connected firms</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -801,11 +807,11 @@ export default function ClaimsPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="available" className="space-y-4">
+          <TabsContent value="my-claims" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Available Claims ({filteredClaims.length})</CardTitle>
-                <CardDescription>Claims ready for you to claim and start working on</CardDescription>
+                <CardTitle>My Claims ({filteredClaims.length})</CardTitle>
+                <CardDescription>Claims you have claimed or are currently working on</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -816,9 +822,9 @@ export default function ClaimsPage() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-semibold text-lg">{claim.id}</span>
                             <Badge variant="outline">{claim.firm}</Badge>
-                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              Available
+                            <Badge className={getStatusColor(claim.status)}>
+                              {getStatusIcon(claim.status)}
+                              <span className="ml-1">{claim.status}</span>
                             </Badge>
                             <Badge className={getPriorityColor(claim.priority)}>{claim.priority}</Badge>
                           </div>
@@ -843,9 +849,17 @@ export default function ClaimsPage() {
                           <p className="text-sm">{claim.description}</p>
                         </div>
                         <div className="flex items-center gap-2 ml-4">
-                          <Button size="sm" onClick={() => handleClaimNow(claim.id)}>
-                            Claim Now
-                          </Button>
+                          {claim.status === "Available" && (
+                            <Button size="sm" onClick={() => handleClaimNow(claim.id)}>
+                              Claim Now
+                            </Button>
+                          )}
+                          {claim.status === "In Progress" && (
+                            <Button variant="outline" size="sm">
+                              <Calendar className="h-4 w-4 mr-2" />
+                              Update Progress
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
