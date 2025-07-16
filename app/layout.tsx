@@ -3,6 +3,8 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { ToastProvider } from "@/components/toast"
+import ErrorBoundary, { AsyncErrorBoundary } from "@/components/error-boundary"
 import { AuthProvider } from "@/hooks/useAuth"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -21,11 +23,17 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </ThemeProvider>
+        <ErrorBoundary>
+          <AsyncErrorBoundary>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+              <ToastProvider>
+                <AuthProvider>
+                  {children}
+                </AuthProvider>
+              </ToastProvider>
+            </ThemeProvider>
+          </AsyncErrorBoundary>
+        </ErrorBoundary>
       </body>
     </html>
   )

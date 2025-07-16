@@ -1,0 +1,310 @@
+/* Mobile and Tablet Optimizations for Flex.IA */
+
+/* Touch-friendly interactions */
+@media (max-width: 768px) {
+  /* Increase touch targets */
+  button, 
+  [role="button"], 
+  .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Better spacing for mobile */
+  .space-y-6 > * + * {
+    margin-top: 1rem;
+  }
+
+  .space-y-8 > * + * {
+    margin-top: 1.5rem;
+  }
+
+  /* Mobile-specific padding */
+  .mobile-padding {
+    padding: 1rem;
+  }
+
+  /* Responsive text sizes */
+  .text-responsive-xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+
+  .text-responsive-2xl {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+  }
+
+  .text-responsive-3xl {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+  }
+
+  /* Mobile navigation improvements */
+  .mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    padding: 0.5rem;
+    z-index: 50;
+  }
+
+  /* Card optimizations for mobile */
+  .mobile-card {
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Form optimizations */
+  .mobile-form input,
+  .mobile-form select,
+  .mobile-form textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 0.75rem;
+  }
+
+  /* Table responsiveness */
+  .mobile-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .mobile-table table {
+    width: 100%;
+    min-width: 600px;
+  }
+
+  /* Hide desktop-only elements */
+  .desktop-only {
+    display: none !important;
+  }
+
+  /* Show mobile-only elements */
+  .mobile-only {
+    display: block !important;
+  }
+
+  /* Sticky headers for mobile */
+  .mobile-sticky-header {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  /* Better modal sizing */
+  .mobile-modal {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+  }
+
+  /* Improved button spacing */
+  .mobile-button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .mobile-button-group button {
+    width: 100%;
+  }
+
+  /* Dashboard specific optimizations */
+  .dashboard-mobile {
+    padding: 0.5rem;
+  }
+
+  .dashboard-mobile .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .dashboard-mobile .sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Claims page mobile optimizations */
+  .claims-mobile .claim-card {
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .claims-mobile .claim-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  /* Analytics mobile optimizations */
+  .analytics-mobile .chart-container {
+    height: 250px;
+    margin-bottom: 1rem;
+  }
+
+  /* Calendar mobile optimizations */
+  .calendar-mobile .calendar-grid {
+    font-size: 0.875rem;
+  }
+
+  .calendar-mobile .event {
+    padding: 0.25rem;
+    font-size: 0.75rem;
+  }
+
+  /* Messaging mobile optimizations */
+  .messaging-mobile .message-list {
+    height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+
+  .messaging-mobile .message-input {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 1rem;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  /* Settings mobile optimizations */
+  .settings-mobile .settings-nav {
+    display: flex;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+  }
+
+  .settings-mobile .settings-nav button {
+    white-space: nowrap;
+    margin-right: 0.5rem;
+  }
+}
+
+/* Tablet specific optimizations */
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* Tablet-specific grid layouts */
+  .tablet-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .tablet-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+
+  /* Tablet sidebar */
+  .tablet-sidebar {
+    width: 200px;
+  }
+
+  /* Tablet modal sizing */
+  .tablet-modal {
+    max-width: 600px;
+    margin: 2rem auto;
+  }
+}
+
+/* Landscape phone optimizations */
+@media (max-width: 768px) and (orientation: landscape) {
+  .landscape-mobile {
+    padding: 0.5rem;
+  }
+
+  .landscape-mobile .header {
+    height: 60px;
+  }
+
+  .landscape-mobile .content {
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+  }
+}
+
+/* High DPI display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .high-dpi-icon {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Dark mode mobile optimizations */
+@media (prefers-color-scheme: dark) {
+  .mobile-nav {
+    background: #1f2937;
+    border-top-color: #374151;
+  }
+
+  .mobile-sticky-header {
+    background: #1f2937;
+    border-bottom-color: #374151;
+  }
+
+  .messaging-mobile .message-input {
+    background: #1f2937;
+    border-top-color: #374151;
+  }
+}
+
+/* Accessibility improvements for mobile */
+@media (max-width: 768px) {
+  /* Focus indicators */
+  button:focus,
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .mobile-card {
+      border: 2px solid;
+    }
+
+    button {
+      border: 2px solid;
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* Print optimizations */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  body {
+    font-size: 12pt;
+    line-height: 1.4;
+  }
+
+  .page-break {
+    page-break-before: always;
+  }
+}

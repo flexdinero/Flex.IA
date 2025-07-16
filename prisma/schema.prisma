@@ -3,8 +3,10 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+  // For development with SQLite, comment out postgresql and uncomment sqlite
+  // provider = "sqlite"
 }
 
 model User {
@@ -33,11 +35,18 @@ model User {
   state             String?
   zipCode           String?
   
+  // Billing & Subscription
+  stripeCustomerId              String?
+  stripeSubscriptionId          String?
+  subscriptionStatus            String?
+  subscriptionPlan              String?
+  subscriptionCurrentPeriodEnd  DateTime?
+
   // Timestamps
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
   lastLoginAt       DateTime?
-  
+
   // Relations
   sessions          Session[]
   tokens            Token[]
@@ -47,6 +56,8 @@ model User {
   earnings          Earning[]
   notifications     Notification[]
   calendar          CalendarEvent[]
+  subscriptions     Subscription[]
+  payments          Payment[]
 
   @@map("users")
 }
@@ -244,4 +255,57 @@ model Notification {
   user            User              @relation(fields: [userId], references: [id])
 
   @@map("notifications")
+}
+
+model Subscription {
+  id                    String    @id @default(cuid())
+  userId                String
+  stripeSubscriptionId  String    @unique
+  status                String    // active, canceled, past_due, etc.
+  plan                  String    // starter, professional, enterprise
+  currentPeriodStart    DateTime
+  currentPeriodEnd      DateTime
+  cancelAtPeriodEnd     Boolean   @default(false)
+  canceledAt            DateTime?
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Relations
+  user                  User      @relation(fields: [userId], references: [id])
+
+  @@map("subscriptions")
+}
+
+model Payment {
+  id                String    @id @default(cuid())
+  userId            String
+  stripeInvoiceId   String?   @unique
+  amount            Int       // Amount in cents
+  currency          String    @default("usd")
+  status            String    // succeeded, failed, pending
+  description       String?
+  paidAt            DateTime?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  user              User      @relation(fields: [userId], references: [id])
+
+  @@map("payments")
+}
+
+model Waitlist {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  company   String?
+  source    String   @default("ai-automation")
+  status    String   @default("pending") // pending, contacted, converted
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("waitlist")
 }

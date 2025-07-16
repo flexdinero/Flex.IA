@@ -2,14 +2,13 @@ import bcrypt from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
 import { nanoid } from 'nanoid'
 import { prisma } from './db'
-import { UserRole } from '@prisma/client'
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret')
 
 export interface SessionData {
   userId: string
   email: string
-  role: UserRole
+  role: string
   firstName: string
   lastName: string
 }

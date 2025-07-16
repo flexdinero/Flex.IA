@@ -1,8 +1,80 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySession } from './lib/auth'
+import { createRateLimitMiddleware } from './lib/rate-limit'
+
+// Security headers configuration
+const securityHeaders = {
+  'X-XSS-Protection': '1; mode=block',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  ...(process.env.NODE_ENV === 'production' && {
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload'
+  })
+}
+
+// Initialize rate limiting
+const rateLimitMiddleware = createRateLimitMiddleware()
+
+// CSP and security functions for Edge Runtime
+function generateCSPNonce(): string {
+  const array = new Uint8Array(16)
+  crypto.getRandomValues(array)
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
+}
+
+function createCSPHeader(nonce?: string): string {
+  const directives = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'" + (nonce ? ` 'nonce-${nonce}'` : ''),
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: https:",
+    "connect-src 'self'",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'"
+  ]
+
+  return directives.join('; ')
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // Apply security headers to all responses
+  const response = NextResponse.next()
+  Object.entries(securityHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value)
+  })
+
+  // Generate and set CSP header
+  const nonce = generateCSPNonce()
+  response.headers.set('Content-Security-Policy', createCSPHeader(nonce))
+
+  // Add request ID for tracing
+  const requestId = Math.random().toString(36).substring(2) + Date.now().toString(36)
+  response.headers.set('X-Request-ID', requestId)
+
+  // Apply rate limiting to API routes
+  if (pathname.startsWith('/api/')) {
+    try {
+      const rateLimitResponse = await rateLimitMiddleware(request)
+      if (rateLimitResponse.status === 429) {
+        return rateLimitResponse
+      }
+
+      // Copy rate limit headers
+      const rateLimitHeaders = ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset']
+      rateLimitHeaders.forEach(header => {
+        const value = rateLimitResponse.headers.get(header)
+        if (value) response.headers.set(header, value)
+      })
+    } catch (error) {
+      console.error('Rate limiting error:', error)
+    }
+  }
 
   // Public routes that don't require authentication
   const publicRoutes = [
@@ -44,7 +116,7 @@ export async function middleware(request: NextRequest) {
 
   // If it's a public route, allow access
   if (isPublicRoute) {
-    return NextResponse.next()
+    return response
   }
 
   // Get session token from cookie
@@ -64,7 +136,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(loginUrl)
       }
     }
-    return NextResponse.next()
+    return response
   }
 
   // Verify the session token
@@ -91,20 +163,29 @@ export async function middleware(request: NextRequest) {
       requestHeaders.set('x-user-role', sessionData.role)
       requestHeaders.set('x-user-email', sessionData.email)
 
-      return NextResponse.next({
+      const enhancedResponse = NextResponse.next({
         request: {
           headers: requestHeaders
         }
       })
+
+      // Copy security headers to the enhanced response
+      Object.entries(securityHeaders).forEach(([key, value]) => {
+        enhancedResponse.headers.set(key, value)
+      })
+      enhancedResponse.headers.set('Content-Security-Policy', createCSPHeader(nonce))
+      enhancedResponse.headers.set('X-Request-ID', requestId)
+
+      return enhancedResponse
     }
 
     // For dashboard routes, check if user has appropriate access
     if (isProtectedDashboardRoute) {
       // Add any role-based access control here if needed
-      return NextResponse.next()
+      return response
     }
 
-    return NextResponse.next()
+    return response
   } catch (error) {
     console.error('Middleware auth error:', error)
     
@@ -112,7 +193,7 @@ export async function middleware(request: NextRequest) {
       ? isProtectedApiRoute
         ? NextResponse.json({ error: 'Authentication error' }, { status: 500 })
         : NextResponse.redirect(new URL('/auth/login', request.url))
-      : NextResponse.next()
+      : response
 
     // Clear session cookie on error
     response.cookies.set('session', '', { maxAge: 0 })

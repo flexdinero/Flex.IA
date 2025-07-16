@@ -157,6 +157,21 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
 
+  // Load sidebar state from localStorage on mount
+  useEffect(() => {
+    const savedSidebarState = localStorage.getItem('sidebarExpanded')
+    if (savedSidebarState !== null) {
+      setSidebarExpanded(JSON.parse(savedSidebarState))
+    }
+  }, [])
+
+  // Save sidebar state to localStorage when it changes
+  const toggleSidebar = () => {
+    const newState = !sidebarExpanded
+    setSidebarExpanded(newState)
+    localStorage.setItem('sidebarExpanded', JSON.stringify(newState))
+  }
+
   const unreadCount = notificationsList.filter((n) => n.unread).length
 
   // Search functionality
@@ -224,7 +239,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <span className="font-semibold text-gray-900 dark:text-white">Flex.IA</span>
             </div>
           )}
-          <Button variant="ghost" size="sm" onClick={() => setSidebarExpanded(!sidebarExpanded)} className="p-1.5">
+          <Button variant="ghost" size="sm" onClick={toggleSidebar} className="p-1.5">
             {sidebarExpanded ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </Button>
         </div>
@@ -281,13 +296,21 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               return (
                 <Link key={item.title} href={item.url}>
                   <div
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative ${
                       active
                         ? "bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300"
                         : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
-                    }`}
+                    } ${!sidebarExpanded ? "justify-center" : ""}`}
+                    title={!sidebarExpanded ? item.title : undefined}
                   >
-                    <item.icon className={`h-5 w-5 ${active ? "text-purple-600 dark:text-purple-400" : ""}`} />
+                    <div className="relative">
+                      <item.icon className={`h-5 w-5 ${active ? "text-purple-600 dark:text-purple-400" : ""}`} />
+                      {!sidebarExpanded && item.badge && (
+                        <Badge className="absolute -top-2 -right-2 h-4 w-4 flex items-center justify-center p-0 text-xs bg-red-500 text-white">
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </div>
                     {sidebarExpanded && (
                       <>
                         <span className="font-medium">{item.title}</span>

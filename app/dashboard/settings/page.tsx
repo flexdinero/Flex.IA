@@ -41,6 +41,7 @@ import {
   Edit,
 } from "lucide-react"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { IntegrationsSection } from "@/components/integrations-section"
 
 export default function SettingsPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -83,11 +84,47 @@ export default function SettingsPage() {
   })
 
   const [integrations, setIntegrations] = useState({
+    // Calendar
     googleCalendar: true,
     outlookCalendar: false,
+    appleCalendar: false,
+
+    // Accounting
     quickbooks: false,
+    xero: false,
+    freshbooks: false,
+
+    // Storage
     dropbox: true,
     googleDrive: false,
+    oneDrive: false,
+
+    // Communication
+    slack: false,
+    microsoftTeams: false,
+    zoom: false,
+
+    // Insurance Carriers
+    crawford: false,
+    sedgwick: false,
+    pilot: false,
+
+    // Weather & Mapping
+    weatherAPI: true,
+    googleMaps: true,
+
+    // Business Tools
+    zapier: false,
+    hubspot: false,
+    salesforce: false,
+
+    // Document Management
+    docusign: false,
+    adobeSign: false,
+
+    // Analytics
+    googleAnalytics: false,
+    mixpanel: false
   })
 
   const [billing, setBilling] = useState({
@@ -840,118 +877,8 @@ export default function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="integrations" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Third-Party Integrations</CardTitle>
-                <CardDescription>Connect your favorite tools and services</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Calendar Integrations */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Calendar</h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Calendar className="h-8 w-8 text-blue-600" />
-                        <div>
-                          <div className="font-medium">Google Calendar</div>
-                          <div className="text-sm text-muted-foreground">
-                            Sync your inspections with Google Calendar
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {integrations.googleCalendar && <Badge variant="secondary">Connected</Badge>}
-                        <Switch
-                          checked={integrations.googleCalendar}
-                          onCheckedChange={(checked) => setIntegrations({ ...integrations, googleCalendar: checked })}
-                        />
-                      </div>
-                    </div>
+            <IntegrationsSection />
 
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Calendar className="h-8 w-8 text-blue-800" />
-                        <div>
-                          <div className="font-medium">Outlook Calendar</div>
-                          <div className="text-sm text-muted-foreground">
-                            Sync your inspections with Outlook Calendar
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {integrations.outlookCalendar && <Badge variant="secondary">Connected</Badge>}
-                        <Switch
-                          checked={integrations.outlookCalendar}
-                          onCheckedChange={(checked) => setIntegrations({ ...integrations, outlookCalendar: checked })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Accounting */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Accounting</h3>
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <CreditCard className="h-8 w-8 text-green-600" />
-                      <div>
-                        <div className="font-medium">QuickBooks</div>
-                        <div className="text-sm text-muted-foreground">Automatically sync earnings and expenses</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {integrations.quickbooks && <Badge variant="secondary">Connected</Badge>}
-                      <Switch
-                        checked={integrations.quickbooks}
-                        onCheckedChange={(checked) => setIntegrations({ ...integrations, quickbooks: checked })}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Cloud Storage */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Cloud Storage</h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Globe className="h-8 w-8 text-blue-500" />
-                        <div>
-                          <div className="font-medium">Dropbox</div>
-                          <div className="text-sm text-muted-foreground">Backup your claim photos and documents</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {integrations.dropbox && <Badge variant="secondary">Connected</Badge>}
-                        <Switch
-                          checked={integrations.dropbox}
-                          onCheckedChange={(checked) => setIntegrations({ ...integrations, dropbox: checked })}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Globe className="h-8 w-8 text-yellow-600" />
-                        <div>
-                          <div className="font-medium">Google Drive</div>
-                          <div className="text-sm text-muted-foreground">Store and organize your claim files</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {integrations.googleDrive && <Badge variant="secondary">Connected</Badge>}
-                        <Switch
-                          checked={integrations.googleDrive}
-                          onCheckedChange={(checked) => setIntegrations({ ...integrations, googleDrive: checked })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
 
           <TabsContent value="billing" className="space-y-4">

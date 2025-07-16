@@ -48,7 +48,6 @@ export default function ClaimsPage() {
   const [selectedStatus, setSelectedStatus] = useState("all")
   const [selectedType, setSelectedType] = useState("all")
   const [selectedClaim, setSelectedClaim] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState("all-claims")
   const [activeTab, setActiveTab] = useState("available-claims")
 
   // All claims data (available + in progress + completed)
@@ -494,11 +493,23 @@ export default function ClaimsPage() {
 
         {/* Claims Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="available-claims">Available Claims ({stats.availableClaims})</TabsTrigger>
-            <TabsTrigger value="my-claims">My Claims ({stats.myClaims})</TabsTrigger>
-            <TabsTrigger value="in-progress">In Progress ({stats.inProgressClaims})</TabsTrigger>
-            <TabsTrigger value="completed">Completed ({stats.completedClaims})</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+            <TabsTrigger value="available-claims" className="text-xs sm:text-sm">
+              <span className="hidden sm:inline">Available Claims ({stats.availableClaims})</span>
+              <span className="sm:hidden">Available ({stats.availableClaims})</span>
+            </TabsTrigger>
+            <TabsTrigger value="my-claims" className="text-xs sm:text-sm">
+              <span className="hidden sm:inline">My Claims ({stats.myClaims})</span>
+              <span className="sm:hidden">Mine ({stats.myClaims})</span>
+            </TabsTrigger>
+            <TabsTrigger value="in-progress" className="text-xs sm:text-sm">
+              <span className="hidden sm:inline">In Progress ({stats.inProgressClaims})</span>
+              <span className="sm:hidden">Progress ({stats.inProgressClaims})</span>
+            </TabsTrigger>
+            <TabsTrigger value="completed" className="text-xs sm:text-sm">
+              <span className="hidden sm:inline">Completed ({stats.completedClaims})</span>
+              <span className="sm:hidden">Done ({stats.completedClaims})</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="available-claims" className="space-y-4">

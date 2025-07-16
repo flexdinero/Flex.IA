@@ -33,6 +33,7 @@ import {
   Settings,
   Database,
   Server,
+  DollarSign,
 } from "lucide-react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 
@@ -48,9 +49,42 @@ export default function AdminPage() {
     activeClaims: 3456,
     totalFirms: 45,
     connectedFirms: 42,
+    monthlyRevenue: 127890,
+    yearlyRevenue: 1534680,
+    churnRate: 3.2,
+    avgRevenuePerUser: 97,
+    newSignupsToday: 12,
+    newSignupsThisMonth: 234,
+    activeSubscriptions: 892,
+    cancelledSubscriptions: 45,
+    trialUsers: 156,
+    conversionRate: 68.5,
     systemUptime: "99.9%",
     avgResponseTime: "245ms",
   }
+
+  const salesData = [
+    { month: 'Jan', revenue: 89450, signups: 156, churn: 12 },
+    { month: 'Feb', revenue: 95230, signups: 178, churn: 15 },
+    { month: 'Mar', revenue: 102890, signups: 203, churn: 18 },
+    { month: 'Apr', revenue: 118760, signups: 234, churn: 22 },
+    { month: 'May', revenue: 127890, signups: 267, churn: 19 },
+    { month: 'Jun', revenue: 134560, signups: 289, churn: 25 }
+  ]
+
+  const recentSignups = [
+    { id: 1, name: 'John Smith', email: 'john@example.com', plan: 'Monthly', amount: 97, date: '2024-01-15', status: 'Active' },
+    { id: 2, name: 'Sarah Johnson', email: 'sarah@example.com', plan: 'Yearly', amount: 984, date: '2024-01-15', status: 'Active' },
+    { id: 3, name: 'Mike Rodriguez', email: 'mike@example.com', plan: 'Monthly', amount: 97, date: '2024-01-14', status: 'Trial' },
+    { id: 4, name: 'Emily Chen', email: 'emily@example.com', plan: 'Yearly', amount: 984, date: '2024-01-14', status: 'Active' },
+    { id: 5, name: 'David Wilson', email: 'david@example.com', plan: 'Monthly', amount: 97, date: '2024-01-13', status: 'Cancelled' }
+  ]
+
+  const waitlistData = [
+    { id: 1, email: 'adjuster1@example.com', source: 'ai-automation', date: '2024-01-15', status: 'pending' },
+    { id: 2, email: 'adjuster2@example.com', source: 'ai-automation', date: '2024-01-14', status: 'contacted' },
+    { id: 3, email: 'adjuster3@example.com', source: 'ai-automation', date: '2024-01-13', status: 'converted' }
+  ]
 
   const users = [
     {
@@ -322,16 +356,198 @@ export default function AdminPage() {
         </div>
 
         {/* Admin Tabs */}
-        <Tabs defaultValue="users" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="users">Users</TabsTrigger>
+        <Tabs defaultValue="dashboard" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-8">
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="sales">Sales</TabsTrigger>
+            <TabsTrigger value="customers">Customers</TabsTrigger>
+            <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
+            <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
             <TabsTrigger value="firms">Firms</TabsTrigger>
             <TabsTrigger value="system">System</TabsTrigger>
-            <TabsTrigger value="logs">Logs</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="users" className="space-y-4">
+          <TabsContent value="dashboard" className="space-y-4">
+            {/* Business Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
+                  <DollarSign className="h-4 w-4 text-green-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">{formatCurrency(systemStats.monthlyRevenue)}</div>
+                  <p className="text-xs text-muted-foreground">+12.5% from last month</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">New Signups</CardTitle>
+                  <Users className="h-4 w-4 text-blue-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-600">{systemStats.newSignupsToday}</div>
+                  <p className="text-xs text-muted-foreground">{systemStats.newSignupsThisMonth} this month</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+                  <Activity className="h-4 w-4 text-purple-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-purple-600">{systemStats.conversionRate}%</div>
+                  <p className="text-xs text-muted-foreground">Trial to paid conversion</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Churn Rate</CardTitle>
+                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-red-600">{systemStats.churnRate}%</div>
+                  <p className="text-xs text-muted-foreground">Monthly churn rate</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Signups</CardTitle>
+                  <CardDescription>Latest customer acquisitions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {recentSignups.slice(0, 5).map((signup) => (
+                      <div key={signup.id} className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{signup.name}</p>
+                          <p className="text-sm text-muted-foreground">{signup.email}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">{formatCurrency(signup.amount)}</p>
+                          <Badge variant={signup.status === 'Active' ? 'default' : signup.status === 'Trial' ? 'secondary' : 'destructive'}>
+                            {signup.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Revenue Trend</CardTitle>
+                  <CardDescription>Monthly revenue growth</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {salesData.slice(-6).map((data) => (
+                      <div key={data.month} className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{data.month}</p>
+                          <p className="text-sm text-muted-foreground">{data.signups} signups</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">{formatCurrency(data.revenue)}</p>
+                          <p className="text-sm text-muted-foreground">{data.churn} churned</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="sales" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Sales Performance</CardTitle>
+                  <CardDescription>Revenue and signup trends</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Month</TableHead>
+                        <TableHead>Revenue</TableHead>
+                        <TableHead>Signups</TableHead>
+                        <TableHead>Churn</TableHead>
+                        <TableHead>Growth</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {salesData.map((data, index) => {
+                        const prevRevenue = index > 0 ? salesData[index - 1].revenue : data.revenue
+                        const growth = ((data.revenue - prevRevenue) / prevRevenue * 100).toFixed(1)
+                        return (
+                          <TableRow key={data.month}>
+                            <TableCell className="font-medium">{data.month}</TableCell>
+                            <TableCell>{formatCurrency(data.revenue)}</TableCell>
+                            <TableCell>{data.signups}</TableCell>
+                            <TableCell>{data.churn}</TableCell>
+                            <TableCell className={index > 0 ? (parseFloat(growth) > 0 ? 'text-green-600' : 'text-red-600') : ''}>
+                              {index > 0 ? `${growth}%` : '-'}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Key Metrics</CardTitle>
+                  <CardDescription>Current performance indicators</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm">ARPU</span>
+                      <span className="font-medium">{formatCurrency(systemStats.avgRevenuePerUser)}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-blue-600 h-2 rounded-full" style={{ width: '75%' }}></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm">Conversion Rate</span>
+                      <span className="font-medium">{systemStats.conversionRate}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-green-600 h-2 rounded-full" style={{ width: `${systemStats.conversionRate}%` }}></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm">Churn Rate</span>
+                      <span className="font-medium">{systemStats.churnRate}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-red-600 h-2 rounded-full" style={{ width: `${systemStats.churnRate * 10}%` }}></div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="customers" className="space-y-4">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
