@@ -2,14 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/session'
-import { ClaimStatus, ClaimType, Priority } from '@prisma/client'
+
+// TypeScript union types based on Prisma schema comments
+type ClaimStatus = 'AVAILABLE' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
+type ClaimType = 'AUTO_COLLISION' | 'PROPERTY_DAMAGE' | 'FIRE_DAMAGE' | 'WATER_DAMAGE' | 'THEFT' | 'VANDALISM' | 'NATURAL_DISASTER' | 'LIABILITY' | 'WORKERS_COMP' | 'OTHER'
+type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
 
 const querySchema = z.object({
   page: z.string().optional().transform(val => val ? parseInt(val) : 1),
   limit: z.string().optional().transform(val => val ? parseInt(val) : 10),
-  status: z.nativeEnum(ClaimStatus).optional(),
-  type: z.nativeEnum(ClaimType).optional(),
-  priority: z.nativeEnum(Priority).optional(),
+  status: z.enum(['AVAILABLE', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
+  type: z.enum(['AUTO_COLLISION', 'PROPERTY_DAMAGE', 'FIRE_DAMAGE', 'WATER_DAMAGE', 'THEFT', 'VANDALISM', 'NATURAL_DISASTER', 'LIABILITY', 'WORKERS_COMP', 'OTHER']).optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
   search: z.string().optional(),
   firmId: z.string().optional(),
   assigned: z.string().optional().transform(val => val === 'true')
@@ -77,8 +81,7 @@ export async function GET(request: NextRequest) {
           _count: {
             select: {
               documents: true,
-              messages: true,
-              reports: true
+              messages: true
             }
           }
         },
@@ -114,8 +117,8 @@ export async function GET(request: NextRequest) {
 const createClaimSchema = z.object({
   title: z.string().min(1),
   description: z.string().optional(),
-  type: z.nativeEnum(ClaimType),
-  priority: z.nativeEnum(Priority).default('MEDIUM'),
+  type: z.enum(['AUTO_COLLISION', 'PROPERTY_DAMAGE', 'FIRE_DAMAGE', 'WATER_DAMAGE', 'THEFT', 'VANDALISM', 'NATURAL_DISASTER', 'LIABILITY', 'WORKERS_COMP', 'OTHER']),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).default('MEDIUM'),
   estimatedValue: z.number().positive().optional(),
   address: z.string().min(1),
   city: z.string().min(1),

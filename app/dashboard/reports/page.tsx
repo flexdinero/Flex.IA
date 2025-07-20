@@ -159,7 +159,7 @@ export default function ReportsPage() {
             <CardTitle>Report Filters</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
               <div className="space-y-2">
                 <Label>Time Period</Label>
                 <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
@@ -236,24 +236,36 @@ export default function ReportsPage() {
 
         {/* Report Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="earnings">Earnings</TabsTrigger>
-            <TabsTrigger value="performance">Performance</TabsTrigger>
-            <TabsTrigger value="firms">Firms</TabsTrigger>
-            <TabsTrigger value="territory">Territory</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto">
+            <TabsList className="grid grid-cols-5 w-full h-6">
+              <TabsTrigger value="overview" className="text-xs px-0.5 py-0.5 h-5">
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="earnings" className="text-xs px-0.5 py-0.5 h-5">
+                Earnings
+              </TabsTrigger>
+              <TabsTrigger value="performance" className="text-xs px-0.5 py-0.5 h-5">
+                Perf
+              </TabsTrigger>
+              <TabsTrigger value="firms" className="text-xs px-0.5 py-0.5 h-5">
+                Firms
+              </TabsTrigger>
+              <TabsTrigger value="territory" className="text-xs px-0.5 py-0.5 h-5">
+                Territory
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="overview" className="space-y-6">
             {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-4 gap-1 sm:gap-2 md:gap-3 lg:gap-4">
               <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-                  <DollarSign className="h-4 w-4 text-green-600" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-3 pt-3">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Earnings</CardTitle>
+                  <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">${totalEarnings.toLocaleString()}</div>
+                <CardContent className="px-3 pb-3">
+                  <div className="text-lg sm:text-2xl font-bold text-green-600">${totalEarnings.toLocaleString()}</div>
                   <div className="text-xs text-muted-foreground flex items-center gap-1">
                     <TrendingUp className="h-3 w-3 text-green-500" />
                     +12.5% from last period
@@ -262,12 +274,12 @@ export default function ReportsPage() {
               </Card>
 
               <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Claims</CardTitle>
-                  <FileText className="h-4 w-4 text-blue-600" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-3 pt-3">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Claims</CardTitle>
+                  <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-blue-600">{totalClaims}</div>
+                <CardContent className="px-3 pb-3">
+                  <div className="text-lg sm:text-2xl font-bold text-blue-600">{totalClaims}</div>
                   <div className="text-xs text-muted-foreground flex items-center gap-1">
                     <TrendingUp className="h-3 w-3 text-green-500" />
                     +8.3% from last period
@@ -276,12 +288,12 @@ export default function ReportsPage() {
               </Card>
 
               <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Avg per Claim</CardTitle>
-                  <Target className="h-4 w-4 text-purple-600" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-3 pt-3">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Avg per Claim</CardTitle>
+                  <Target className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-purple-600">${avgEarningsPerClaim.toFixed(0)}</div>
+                <CardContent className="px-3 pb-3">
+                  <div className="text-lg sm:text-2xl font-bold text-purple-600">${avgEarningsPerClaim.toFixed(0)}</div>
                   <div className="text-xs text-muted-foreground flex items-center gap-1">
                     <TrendingUp className="h-3 w-3 text-green-500" />
                     +3.8% from last period
@@ -290,19 +302,19 @@ export default function ReportsPage() {
               </Card>
 
               <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Firms</CardTitle>
-                  <Building2 className="h-4 w-4 text-orange-600" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-3 pt-3">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Active Firms</CardTitle>
+                  <Building2 className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-orange-600">{firmPerformance.length}</div>
+                <CardContent className="px-3 pb-3">
+                  <div className="text-lg sm:text-2xl font-bold text-orange-600">{firmPerformance.length}</div>
                   <div className="text-xs text-muted-foreground">Connected IA firms</div>
                 </CardContent>
               </Card>
             </div>
 
             {/* Performance Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-4 gap-1 sm:gap-2 md:gap-3 lg:gap-4">
               {performanceMetrics.map((metric, index) => (
                 <Card key={index} className="hover:shadow-lg transition-shadow">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -468,7 +480,7 @@ export default function ReportsPage() {
           </TabsContent>
 
           <TabsContent value="performance" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-4 gap-2 sm:gap-4 lg:gap-6">
               {performanceMetrics.map((metric, index) => (
                 <Card key={index} className="hover:shadow-lg transition-shadow">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

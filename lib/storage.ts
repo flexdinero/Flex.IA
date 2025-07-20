@@ -80,7 +80,7 @@ export class StorageService {
       }
     } catch (error) {
       console.error('File upload failed:', error)
-      throw new Error(`Upload failed: ${error.message}`)
+      throw new Error(`Upload failed: ${(error as Error).message}`)
     }
   }
 
@@ -290,3 +290,7 @@ export class StorageService {
 }
 
 export const storageService = new StorageService()
+
+// Export individual functions for compatibility
+export const uploadFile = (file: File, path: string) => storageService.uploadFile(file, path)
+export const deleteFile = (pathname: string) => storageService.deleteFile(pathname)

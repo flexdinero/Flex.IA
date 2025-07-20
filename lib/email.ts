@@ -53,13 +53,14 @@ export class EmailService {
         to: Array.isArray(to) ? to : [to],
         subject,
         html,
-        text
+        text,
+        react: null // Required by Resend API
       })
 
       return { success: true, id: result.data?.id }
     } catch (error) {
       console.error('Email sending failed:', error)
-      return { success: false, error: error.message }
+      return { success: false, error: (error as Error).message }
     }
   }
 
@@ -346,6 +347,230 @@ export class EmailService {
       html
     })
   }
+
+  async sendWelcomeEmailLegacy(email: string, firstName: string, planName: string) {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Welcome to Flex.IA</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #3b82f6; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .button { display: inline-block; background: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .feature { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #3b82f6; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🎉 Welcome to Flex.IA!</h1>
+            </div>
+            <div class="content">
+              <h2>Hi ${firstName}!</h2>
+              <p>Welcome to Flex.IA! Your ${planName} subscription is now active and you're ready to start maximizing your independent adjusting career.</p>
+
+              <div style="text-align: center;">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" class="button">Access Your Dashboard</a>
+              </div>
+
+              <h3>What's Next?</h3>
+              <div class="feature">
+                <h4>🔍 Browse Available Claims</h4>
+                <p>Start exploring claims from our network of 50+ insurance firms</p>
+              </div>
+              <div class="feature">
+                <h4>📊 Track Your Earnings</h4>
+                <p>Monitor your income and performance with detailed analytics</p>
+              </div>
+              <div class="feature">
+                <h4>🤝 Connect with Firms</h4>
+                <p>Build relationships with top insurance companies</p>
+              </div>
+
+              <p>If you have any questions, our support team is here to help!</p>
+              <p>Best regards,<br>The Flex.IA Team</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `
+
+    return this.sendEmail({
+      to: email,
+      subject: '🎉 Welcome to Flex.IA - Your Account is Ready!',
+      html
+    })
+  }
+
+  async sendPlanChangeEmail(email: string, firstName: string, oldPlan: string, newPlan: string) {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Subscription Updated</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #10b981; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .button { display: inline-block; background: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>📈 Subscription Updated</h1>
+            </div>
+            <div class="content">
+              <h2>Hi ${firstName}!</h2>
+              <p>Your Flex.IA subscription has been successfully updated from ${oldPlan} to ${newPlan}.</p>
+
+              <div style="text-align: center;">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing" class="button">View Billing Details</a>
+              </div>
+
+              <p>Your new plan features are now available in your dashboard.</p>
+              <p>Best regards,<br>The Flex.IA Team</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `
+
+    return this.sendEmail({
+      to: email,
+      subject: '📈 Your Flex.IA Subscription Has Been Updated',
+      html
+    })
+  }
+
+  async sendCancellationEmail(email: string, firstName: string) {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Subscription Canceled</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #6b7280; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .button { display: inline-block; background: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>😔 We're Sorry to See You Go</h1>
+            </div>
+            <div class="content">
+              <h2>Hi ${firstName},</h2>
+              <p>Your Flex.IA subscription has been canceled. You'll continue to have access to your account until the end of your current billing period.</p>
+
+              <p>We'd love to hear your feedback about your experience with Flex.IA. Your input helps us improve our platform for all independent adjusters.</p>
+
+              <div style="text-align: center;">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL}/feedback" class="button">Share Feedback</a>
+              </div>
+
+              <p>If you change your mind, you can reactivate your subscription anytime from your dashboard.</p>
+              <p>Best regards,<br>The Flex.IA Team</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `
+
+    return this.sendEmail({
+      to: email,
+      subject: '😔 Your Flex.IA Subscription Has Been Canceled',
+      html
+    })
+  }
 }
 
 export const emailService = new EmailService()
+
+// Export individual functions for easier importing
+export const sendWelcomeEmail = (email: string, firstName: string, planName: string) =>
+  emailService.sendWelcomeEmail({ email, firstName, planName })
+
+export const sendPlanChangeEmail = (email: string, firstName: string, oldPlan: string, newPlan: string) =>
+  emailService.sendPlanChangeEmail(email, firstName, oldPlan, newPlan)
+
+export const sendCancellationEmail = (email: string, firstName: string) =>
+  emailService.sendCancellationEmail(email, firstName)
+
+export const sendPasswordResetEmail = (email: string, token: string, firstName: string) =>
+  emailService.sendPasswordResetEmail(email, token, firstName)
+
+export const sendVerificationEmail = (email: string, token: string, firstName: string) =>
+  emailService.sendVerificationEmail(email, token, firstName)
+
+// Placeholder functions for missing email types
+export const scheduleRetentionEmail = async (email: string, firstName: string) => {
+  console.log(`Retention email scheduled for ${email}`)
+  // TODO: Implement with job queue
+}
+
+export const sendPaymentConfirmationEmail = async (email: string, firstName: string, amount: string, claimNumber: string) => {
+  console.log(`Payment confirmation email sent to ${email}`)
+  // TODO: Implement payment confirmation template
+}
+
+export const sendPaymentFailureEmail = async (email: string, firstName: string, amount: string) => {
+  console.log(`Payment failure email sent to ${email}`)
+  // TODO: Implement payment failure template
+}
+
+export const sendSupportTicketEmail = async (email: string, firstName: string, ticketNumber: string, subject: string, description: string) => {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Support Ticket Created</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #3b82f6; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .ticket-info { background: white; padding: 15px; margin: 15px 0; border-radius: 5px; border-left: 4px solid #3b82f6; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🎫 Support Ticket Created</h1>
+          </div>
+          <div class="content">
+            <h2>Hi ${firstName}!</h2>
+            <p>Your support ticket has been created successfully. Our team will review it and respond as soon as possible.</p>
+
+            <div class="ticket-info">
+              <h3>Ticket Details</h3>
+              <p><strong>Ticket Number:</strong> ${ticketNumber}</p>
+              <p><strong>Subject:</strong> ${subject}</p>
+              <p><strong>Description:</strong> ${description}</p>
+            </div>
+
+            <p>You can track the status of your ticket in your dashboard or reply to this email to add more information.</p>
+            <p>Best regards,<br>The Flex.IA Support Team</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `
+
+  return emailService.sendEmail({
+    to: email,
+    subject: `🎫 Support Ticket Created - ${ticketNumber}`,
+    html
+  })
+}

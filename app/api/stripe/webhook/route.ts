@@ -3,31 +3,107 @@ import { paymentService } from '@/lib/payments'
 import { prisma } from '@/lib/db'
 import { emailService } from '@/lib/email'
 import { realtimeService } from '@/lib/realtime'
+import { logSecurityEvent, extractClientIP } from '@/lib/security'
+import Stripe from 'stripe'
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2023-10-16'
+})
 
 export async function POST(request: NextRequest) {
+  const ip = extractClientIP(request)
+  const userAgent = request.headers.get('user-agent') || ''
+
   try {
     const body = await request.text()
     const signature = request.headers.get('stripe-signature')
 
     if (!signature) {
+      logSecurityEvent({
+        type: 'suspicious_activity',
+        ip,
+        userAgent,
+        timestamp: new Date(),
+        details: {
+          action: 'stripe_webhook_missing_signature',
+          bodyLength: body.length
+        }
+      })
       return NextResponse.json(
         { error: 'Missing stripe signature' },
         { status: 400 }
       )
     }
 
-    // Verify webhook signature and handle event
-    const handled = await paymentService.handleWebhook(body, signature)
+    // Verify webhook signature with enhanced security
+    let event: Stripe.Event
+    try {
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+      if (!webhookSecret) {
+        throw new Error('STRIPE_WEBHOOK_SECRET not configured')
+      }
 
-    if (!handled) {
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
+
+      // Log successful webhook verification
+      logSecurityEvent({
+        type: 'api_access',
+        ip,
+        userAgent,
+        timestamp: new Date(),
+        details: {
+          action: 'stripe_webhook_verified',
+          eventType: event.type,
+          eventId: event.id
+        }
+      })
+
+    } catch (err) {
+      logSecurityEvent({
+        type: 'suspicious_activity',
+        ip,
+        userAgent,
+        timestamp: new Date(),
+        details: {
+          action: 'stripe_webhook_verification_failed',
+          error: err instanceof Error ? err.message : 'Unknown error',
+          signature: signature.substring(0, 20) + '...' // Log partial signature for debugging
+        }
+      })
+
+      console.error('Stripe webhook signature verification failed:', err)
       return NextResponse.json(
-        { error: 'Webhook handling failed' },
+        { error: 'Invalid signature' },
         { status: 400 }
       )
     }
 
-    // Parse the event for additional processing
-    const event = JSON.parse(body)
+    // Additional security: verify event is recent (within 5 minutes)
+    const eventTime = new Date(event.created * 1000)
+    const now = new Date()
+    const timeDiff = now.getTime() - eventTime.getTime()
+    const fiveMinutes = 5 * 60 * 1000
+
+    if (timeDiff > fiveMinutes) {
+      logSecurityEvent({
+        type: 'suspicious_activity',
+        ip,
+        userAgent,
+        timestamp: new Date(),
+        details: {
+          action: 'stripe_webhook_replay_attempt',
+          eventId: event.id,
+          eventTime: eventTime.toISOString(),
+          timeDiff
+        }
+      })
+      return NextResponse.json(
+        { error: 'Event too old' },
+        { status: 400 }
+      )
+    }
+
+    // Event is already parsed above, no need to parse again
     
     switch (event.type) {
       case 'customer.subscription.created':

@@ -83,7 +83,7 @@ export async function POST(
     if (user.role === 'FIRM_ADMIN') {
       const connection = await prisma.firmConnection.findFirst({
         where: {
-          userId: targetAdjusterId,
+          adjusterId: targetAdjusterId,
           firmId: claim.firmId,
           status: 'APPROVED'
         }

@@ -31,10 +31,13 @@ import {
   Activity,
 } from "lucide-react"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { FilterBar } from "@/components/ui/filter-bar"
+import { firmsFilterConfig } from "@/lib/filter-configs"
 
 export default function FirmsPage() {
   const [showAddFirm, setShowAddFirm] = useState(false)
   const [selectedFirm, setSelectedFirm] = useState<any>(null)
+  const [searchTerm, setSearchTerm] = useState("")
   const [newFirm, setNewFirm] = useState({
     name: "",
     url: "",
@@ -44,6 +47,47 @@ export default function FirmsPage() {
     syncEnabled: true,
     syncInterval: "60",
   })
+
+  // Standardized filter state
+  const [activeFilters, setActiveFilters] = useState({
+    status: 'all',
+    type: 'all',
+    rating: 'all'
+  })
+
+  // Filter handling functions
+  const handleFilterChange = (key: string, value: string) => {
+    setActiveFilters(prev => ({ ...prev, [key]: value }))
+  }
+
+  const handleClearAllFilters = () => {
+    setActiveFilters({
+      status: 'all',
+      type: 'all',
+      rating: 'all'
+    })
+    setSearchTerm('')
+  }
+
+  // Filter firms based on search and filters
+  const getFilteredFirms = () => {
+    return firms.filter(firm => {
+      const matchesSearch = searchTerm === '' ||
+        firm.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        firm.url.toLowerCase().includes(searchTerm.toLowerCase())
+
+      const matchesStatus = activeFilters.status === 'all' || firm.status === activeFilters.status
+      const matchesType = activeFilters.type === 'all' || firm.connectionType === activeFilters.type
+      const matchesRating = activeFilters.rating === 'all' ||
+        (activeFilters.rating === '5' && firm.stats.successRate >= 95) ||
+        (activeFilters.rating === '4' && firm.stats.successRate >= 80) ||
+        (activeFilters.rating === '3' && firm.stats.successRate >= 60)
+
+      return matchesSearch && matchesStatus && matchesType && matchesRating
+    })
+  }
+
+  const filteredFirms = getFilteredFirms()
 
   const firms = [
     {
@@ -259,11 +303,7 @@ export default function FirmsPage() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">Connected Firms</h1>
-            <p className="text-muted-foreground">Manage your IA firm connections and sync settings</p>
-          </div>
+        <div className="flex justify-end">
           <Dialog open={showAddFirm} onOpenChange={setShowAddFirm}>
             <DialogTrigger asChild>
               <Button>
@@ -353,60 +393,92 @@ export default function FirmsPage() {
           </Dialog>
         </div>
 
+        {/* Standardized Filter Bar */}
+        <FilterBar
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Search firms by name, URL..."
+          filters={firmsFilterConfig}
+          activeFilters={activeFilters}
+          onFilterChange={handleFilterChange}
+          onClearAll={handleClearAllFilters}
+          showSearch={true}
+          showFilterToggle={true}
+          className="rounded-lg border"
+        />
+
         {/* Summary Stats - Moved to top */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-4 gap-1 sm:gap-2 md:gap-3 lg:gap-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Firms</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+              <CardTitle className="text-xs font-medium truncate">Total Firms</CardTitle>
+              <Building2 className="h-3 w-3 text-muted-foreground flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{firms.length}</div>
-              <p className="text-xs text-muted-foreground">
+            <CardContent className="px-2 pb-2">
+              <div className="text-sm sm:text-lg md:text-xl font-bold">{firms.length}</div>
+              <p className="text-xs text-muted-foreground truncate">
                 {firms.filter((f) => f.status === "Connected").length} connected
               </p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Claims</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+              <CardTitle className="text-xs font-medium truncate">Active Claims</CardTitle>
+              <Activity className="h-3 w-3 text-muted-foreground flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{firms.reduce((sum, firm) => sum + firm.claims, 0)}</div>
-              <p className="text-xs text-muted-foreground">Across all firms</p>
+            <CardContent className="px-2 pb-2">
+              <div className="text-sm sm:text-lg md:text-xl font-bold">{firms.reduce((sum, firm) => sum + firm.claims, 0)}</div>
+              <p className="text-xs text-muted-foreground truncate">Across all firms</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg Success Rate</CardTitle>
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+              <CardTitle className="text-xs font-medium truncate">Avg Success Rate</CardTitle>
+              <CheckCircle className="h-3 w-3 text-muted-foreground flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
+            <CardContent className="px-2 pb-2">
+              <div className="text-sm sm:text-lg md:text-xl font-bold">
                 {(firms.reduce((sum, firm) => sum + firm.stats.successRate, 0) / firms.length).toFixed(1)}%
               </div>
-              <p className="text-xs text-muted-foreground">All time average</p>
+              <p className="text-xs text-muted-foreground truncate">All time average</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Sync Errors</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+              <CardTitle className="text-xs font-medium truncate">Sync Errors</CardTitle>
+              <AlertTriangle className="h-3 w-3 text-muted-foreground flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{firms.filter((f) => f.status === "Error").length}</div>
-              <p className="text-xs text-muted-foreground">Require attention</p>
+            <CardContent className="px-2 pb-2">
+              <div className="text-sm sm:text-lg md:text-xl font-bold">{firms.filter((f) => f.status === "Error").length}</div>
+              <p className="text-xs text-muted-foreground truncate">Require attention</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Firms Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {firms.map((firm) => (
+          {filteredFirms.length === 0 ? (
+            <div className="col-span-full text-center py-8 text-gray-500">
+              <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="text-sm">
+                {searchTerm || Object.values(activeFilters).some(v => v !== 'all')
+                  ? 'No firms found matching your filters'
+                  : 'No firms connected yet'}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                onClick={() => setShowAddFirm(true)}
+              >
+                Add Your First Firm
+              </Button>
+            </div>
+          ) : (
+            filteredFirms.map((firm) => (
             <Card key={firm.id} className="hover:shadow-md transition-shadow">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -591,7 +663,7 @@ export default function FirmsPage() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+          )))}
         </div>
       </div>
     </DashboardLayout>

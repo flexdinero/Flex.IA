@@ -41,6 +41,8 @@ import {
   Award,
 } from "lucide-react"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { FilterBar } from "@/components/ui/filter-bar"
+import { vaultFilterConfig } from "@/lib/filter-configs"
 
 export default function VaultPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -48,6 +50,25 @@ export default function VaultPage() {
   const [selectedStatus, setSelectedStatus] = useState("all")
   const [viewMode, setViewMode] = useState("grid")
   const [selectedItem, setSelectedItem] = useState<any>(null)
+
+  // Standardized filter state
+  const [activeFilters, setActiveFilters] = useState({
+    type: 'all',
+    status: 'all'
+  })
+
+  // Filter handling functions
+  const handleFilterChange = (key: string, value: string) => {
+    setActiveFilters(prev => ({ ...prev, [key]: value }))
+  }
+
+  const handleClearAllFilters = () => {
+    setActiveFilters({
+      type: 'all',
+      status: 'all'
+    })
+    setSearchTerm('')
+  }
   const [activeTab, setActiveTab] = useState("documents")
 
   // Documents data
@@ -404,6 +425,20 @@ export default function VaultPage() {
           </div>
         </div>
 
+        {/* Standardized Filter Bar */}
+        <FilterBar
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Search documents, contracts, files..."
+          filters={vaultFilterConfig}
+          activeFilters={activeFilters}
+          onFilterChange={handleFilterChange}
+          onClearAll={handleClearAllFilters}
+          showSearch={true}
+          showFilterToggle={true}
+          className="rounded-lg border"
+        />
+
         {/* Stats */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
@@ -413,48 +448,48 @@ export default function VaultPage() {
 
           <TabsContent value="documents" className="space-y-6">
             {/* Document Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-4 gap-1 sm:gap-2 md:gap-3 lg:gap-4">
               <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Documents</CardTitle>
-                  <FileText className="h-4 w-4 text-blue-600" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+                  <CardTitle className="text-xs font-medium truncate">Total Documents</CardTitle>
+                  <FileText className="h-3 w-3 text-blue-600 flex-shrink-0" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{documentStats.totalDocuments}</div>
-                  <div className="text-xs text-muted-foreground">Documents stored</div>
+                <CardContent className="px-2 pb-2">
+                  <div className="text-sm sm:text-lg md:text-xl font-bold">{documentStats.totalDocuments}</div>
+                  <div className="text-xs text-muted-foreground truncate">Documents stored</div>
                 </CardContent>
               </Card>
 
               <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+                  <CardTitle className="text-xs font-medium truncate">Active</CardTitle>
+                  <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">{documentStats.activeDocuments}</div>
-                  <div className="text-xs text-muted-foreground">Currently valid</div>
+                <CardContent className="px-2 pb-2">
+                  <div className="text-sm sm:text-lg md:text-xl font-bold text-green-600">{documentStats.activeDocuments}</div>
+                  <div className="text-xs text-muted-foreground truncate">Currently valid</div>
                 </CardContent>
               </Card>
 
               <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Expiring Soon</CardTitle>
-                  <Clock className="h-4 w-4 text-yellow-600" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+                  <CardTitle className="text-xs font-medium truncate">Expiring Soon</CardTitle>
+                  <Clock className="h-3 w-3 text-yellow-600 flex-shrink-0" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-yellow-600">{documentStats.expiringDocuments}</div>
-                  <div className="text-xs text-muted-foreground">Need attention</div>
+                <CardContent className="px-2 pb-2">
+                  <div className="text-sm sm:text-lg md:text-xl font-bold text-yellow-600">{documentStats.expiringDocuments}</div>
+                  <div className="text-xs text-muted-foreground truncate">Need attention</div>
                 </CardContent>
               </Card>
 
               <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Expired</CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+                  <CardTitle className="text-xs font-medium truncate">Expired</CardTitle>
+                  <AlertTriangle className="h-3 w-3 text-red-600 flex-shrink-0" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-red-600">{documentStats.expiredDocuments}</div>
-                  <div className="text-xs text-muted-foreground">Need renewal</div>
+                <CardContent className="px-2 pb-2">
+                  <div className="text-sm sm:text-lg md:text-xl font-bold text-red-600">{documentStats.expiredDocuments}</div>
+                  <div className="text-xs text-muted-foreground truncate">Need renewal</div>
                 </CardContent>
               </Card>
             </div>
@@ -731,48 +766,48 @@ export default function VaultPage() {
 
           <TabsContent value="contracts" className="space-y-6">
             {/* Contract Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-4 gap-1 sm:gap-2 md:gap-3 lg:gap-4">
               <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Contracts</CardTitle>
-                  <FileSignature className="h-4 w-4 text-blue-600" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+                  <CardTitle className="text-xs font-medium truncate">Total Contracts</CardTitle>
+                  <FileSignature className="h-3 w-3 text-blue-600 flex-shrink-0" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{contractStats.totalContracts}</div>
-                  <div className="text-xs text-muted-foreground">Contracts managed</div>
+                <CardContent className="px-2 pb-2">
+                  <div className="text-sm sm:text-lg md:text-xl font-bold">{contractStats.totalContracts}</div>
+                  <div className="text-xs text-muted-foreground truncate">Contracts managed</div>
                 </CardContent>
               </Card>
 
               <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+                  <CardTitle className="text-xs font-medium truncate">Active</CardTitle>
+                  <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">{contractStats.activeContracts}</div>
-                  <div className="text-xs text-muted-foreground">Currently active</div>
+                <CardContent className="px-2 pb-2">
+                  <div className="text-sm sm:text-lg md:text-xl font-bold text-green-600">{contractStats.activeContracts}</div>
+                  <div className="text-xs text-muted-foreground truncate">Currently active</div>
                 </CardContent>
               </Card>
 
               <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pending Signature</CardTitle>
-                  <PenTool className="h-4 w-4 text-yellow-600" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+                  <CardTitle className="text-xs font-medium truncate">Pending Signature</CardTitle>
+                  <PenTool className="h-3 w-3 text-yellow-600 flex-shrink-0" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-yellow-600">{contractStats.pendingSignature}</div>
-                  <div className="text-xs text-muted-foreground">Awaiting signature</div>
+                <CardContent className="px-2 pb-2">
+                  <div className="text-sm sm:text-lg md:text-xl font-bold text-yellow-600">{contractStats.pendingSignature}</div>
+                  <div className="text-xs text-muted-foreground truncate">Awaiting signature</div>
                 </CardContent>
               </Card>
 
               <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Expired</CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+                  <CardTitle className="text-xs font-medium truncate">Expired</CardTitle>
+                  <AlertTriangle className="h-3 w-3 text-red-600 flex-shrink-0" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-red-600">{contractStats.expiredContracts}</div>
-                  <div className="text-xs text-muted-foreground">Need renewal</div>
+                <CardContent className="px-2 pb-2">
+                  <div className="text-sm sm:text-lg md:text-xl font-bold text-red-600">{contractStats.expiredContracts}</div>
+                  <div className="text-xs text-muted-foreground truncate">Need renewal</div>
                 </CardContent>
               </Card>
             </div>

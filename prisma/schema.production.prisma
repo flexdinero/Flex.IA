@@ -1,0 +1,550 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums for PostgreSQL
+enum UserRole {
+  ADMIN
+  ADJUSTER
+  FIRM
+}
+
+enum ClaimStatus {
+  AVAILABLE
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ClaimType {
+  AUTO_COLLISION
+  PROPERTY_DAMAGE
+  FIRE_DAMAGE
+  WATER_DAMAGE
+  THEFT
+  VANDALISM
+  NATURAL_DISASTER
+  LIABILITY
+  WORKERS_COMP
+  OTHER
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum NotificationType {
+  CLAIM_ASSIGNED
+  CLAIM_UPDATED
+  PAYMENT_RECEIVED
+  MESSAGE_RECEIVED
+  SYSTEM_ALERT
+  REMINDER
+  SYSTEM_UPDATE
+  FIRM_INVITATION
+  DOCUMENT_UPLOADED
+}
+
+enum EarningStatus {
+  PENDING
+  PAID
+  DISPUTED
+}
+
+enum DocumentType {
+  REPORT
+  PHOTO
+  CONTRACT
+  CERTIFICATE
+  INVOICE
+  OTHER
+}
+
+enum MessageType {
+  DIRECT
+  CLAIM_RELATED
+  SYSTEM
+  BROADCAST
+}
+
+model User {
+  id                String       @id @default(cuid())
+  email             String       @unique
+  firstName         String
+  lastName          String
+  phone             String?
+  profileImage      String?
+  hashedPassword    String?
+  role              UserRole     @default(ADJUSTER)
+  isActive          Boolean      @default(true)
+  emailVerified     Boolean      @default(false)
+  twoFactorEnabled  Boolean      @default(false)
+  twoFactorSecret   String?
+  
+  // Adjuster specific fields
+  licenseNumber     String?
+  certifications    Json?        // JSON array for PostgreSQL
+  specialties       Json?        // JSON array for PostgreSQL
+  yearsExperience   Int?
+  hourlyRate        Decimal?     @db.Decimal(10, 2)
+  travelRadius      Int?
+  address           String?
+  city              String?
+  state             String?
+  zipCode           String?
+  
+  // Billing & Subscription
+  stripeCustomerId              String?   @unique
+  stripeSubscriptionId          String?
+  subscriptionStatus            String?
+  subscriptionPlan              String?
+  subscriptionCurrentPeriodEnd  DateTime?
+  subscriptionCancelAtPeriodEnd Boolean?  @default(false)
+  
+  // Company/Firm fields
+  companyName       String?
+  companyLogo       String?
+  companyWebsite    String?
+  
+  // Timestamps
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  lastLoginAt       DateTime?
+  
+  // Relations
+  claims            Claim[]      @relation("AdjusterClaims")
+  earnings          Earning[]
+  notifications     Notification[]
+  sentMessages      Message[]    @relation("SentMessages")
+  receivedMessages  Message[]    @relation("ReceivedMessages")
+  sessions          Session[]
+  documents         Document[]
+  calendarEvents    CalendarEvent[]
+  supportTickets    SupportTicket[]
+  
+  // Affiliate relations
+  affiliatePartner  AffiliatePartner?
+  referrals         AffiliateReferral[] @relation("ReferredBy")
+  referredUsers     AffiliateReferral[] @relation("Referrer")
+  
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model Firm {
+  id                String    @id @default(cuid())
+  name              String
+  logo              String?
+  website           String?
+  contactEmail      String?
+  contactPhone      String?
+  address           String?
+  city              String?
+  state             String?
+  zipCode           String?
+  
+  // API Integration
+  apiEndpoint       String?
+  apiKey            String?
+  webhookUrl        String?
+  isActive          Boolean   @default(true)
+  
+  // Metadata
+  description       String?
+  specialties       Json?     // JSON array
+  coverageAreas     Json?     // JSON array
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  claims            Claim[]
+  messages          Message[]
+  
+  @@index([name])
+  @@index([isActive])
+  @@map("firms")
+}
+
+model Claim {
+  id                String      @id @default(cuid())
+  claimNumber       String      @unique
+  title             String
+  description       String?
+  type              ClaimType
+  status            ClaimStatus @default(AVAILABLE)
+  priority          Priority    @default(MEDIUM)
+  
+  // Financial
+  estimatedValue    Decimal?    @db.Decimal(12, 2)
+  adjusterFee       Decimal?    @db.Decimal(10, 2)
+  
+  // Location
+  address           String
+  city              String
+  state             String
+  zipCode           String
+  latitude          Decimal?    @db.Decimal(10, 8)
+  longitude         Decimal?    @db.Decimal(11, 8)
+  
+  // Dates
+  incidentDate      DateTime
+  reportedDate      DateTime
+  deadline          DateTime?
+  assignedAt        DateTime?
+  completedAt       DateTime?
+  
+  // Relations
+  firmId            String
+  adjusterId        String?
+  
+  firm              Firm        @relation(fields: [firmId], references: [id])
+  adjuster          User?       @relation("AdjusterClaims", fields: [adjusterId], references: [id])
+  
+  // Child relations
+  documents         Document[]
+  messages          Message[]
+  earnings          Earning[]
+  calendarEvents    CalendarEvent[]
+  
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  
+  @@index([claimNumber])
+  @@index([status])
+  @@index([type])
+  @@index([priority])
+  @@index([firmId])
+  @@index([adjusterId])
+  @@index([deadline])
+  @@index([createdAt])
+  @@map("claims")
+}
+
+model Earning {
+  id            String        @id @default(cuid())
+  amount        Decimal       @db.Decimal(10, 2)
+  type          String        // "CLAIM_FEE", "BONUS", "REFERRAL", etc.
+  status        EarningStatus @default(PENDING)
+  description   String?
+  earnedDate    DateTime
+  paidDate      DateTime?
+  
+  // Relations
+  userId        String
+  claimId       String?
+  
+  user          User          @relation(fields: [userId], references: [id])
+  claim         Claim?        @relation(fields: [claimId], references: [id])
+  
+  // Payment tracking
+  stripePaymentIntentId String?
+  paymentMethod         String?
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  @@index([userId])
+  @@index([claimId])
+  @@index([status])
+  @@index([earnedDate])
+  @@map("earnings")
+}
+
+model Document {
+  id            String       @id @default(cuid())
+  filename      String
+  originalName  String
+  mimeType      String
+  size          Int
+  type          DocumentType
+  description   String?
+  
+  // Storage
+  url           String
+  s3Key         String?
+  
+  // Relations
+  userId        String
+  claimId       String?
+  
+  user          User         @relation(fields: [userId], references: [id])
+  claim         Claim?       @relation(fields: [claimId], references: [id])
+  
+  // Metadata
+  isPublic      Boolean      @default(false)
+  expiresAt     DateTime?
+  
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  @@index([userId])
+  @@index([claimId])
+  @@index([type])
+  @@map("documents")
+}
+
+model Message {
+  id            String      @id @default(cuid())
+  content       String
+  type          MessageType @default(DIRECT)
+  isRead        Boolean     @default(false)
+  priority      Priority    @default(MEDIUM)
+  
+  // Relations
+  senderId      String
+  recipientId   String
+  claimId       String?
+  firmId        String?
+  
+  sender        User        @relation("SentMessages", fields: [senderId], references: [id])
+  recipient     User        @relation("ReceivedMessages", fields: [recipientId], references: [id])
+  claim         Claim?      @relation(fields: [claimId], references: [id])
+  firm          Firm?       @relation(fields: [firmId], references: [id])
+  
+  // Attachments
+  attachments   Json?       // JSON array of file references
+  
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([claimId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+model Notification {
+  id            String           @id @default(cuid())
+  title         String
+  content       String
+  type          NotificationType
+  isRead        Boolean          @default(false)
+  
+  // Relations
+  userId        String
+  user          User             @relation(fields: [userId], references: [id])
+  
+  // Metadata
+  metadata      Json?            // Additional data
+  actionUrl     String?          // URL for action button
+  
+  createdAt     DateTime         @default(now())
+  
+  @@index([userId])
+  @@index([isRead])
+  @@index([type])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model CalendarEvent {
+  id            String    @id @default(cuid())
+  title         String
+  description   String?
+  startTime     DateTime
+  endTime       DateTime
+  location      String?
+  type          String    // "INSPECTION", "MEETING", "DEADLINE", etc.
+
+  // Relations
+  userId        String
+  claimId       String?
+
+  user          User      @relation(fields: [userId], references: [id])
+  claim         Claim?    @relation(fields: [claimId], references: [id])
+
+  // Metadata
+  isAllDay      Boolean   @default(false)
+  reminders     Json?     // JSON array of reminder times
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([claimId])
+  @@index([startTime])
+  @@map("calendar_events")
+}
+
+model SupportTicket {
+  id            String    @id @default(cuid())
+  subject       String
+  description   String
+  status        String    @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  priority      Priority  @default(MEDIUM)
+  category      String?   // "TECHNICAL", "BILLING", "GENERAL", etc.
+
+  // Relations
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+
+  // Metadata
+  attachments   Json?     // JSON array of file references
+  resolution    String?
+  resolvedAt    DateTime?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([priority])
+  @@map("support_tickets")
+}
+
+model AffiliatePartner {
+  id                String              @id @default(cuid())
+  userId            String              @unique
+  affiliateCode     String              @unique
+  status            String              @default("PENDING") // PENDING, ACTIVE, SUSPENDED, TERMINATED
+
+  // Commission structure
+  commissionRate    Decimal             @default(0.10) @db.Decimal(5, 4) // 10% default
+  paymentMethod     String?             // "STRIPE", "PAYPAL", "BANK_TRANSFER"
+  paymentDetails    Json?               // Payment method details
+
+  // Performance tracking
+  totalReferrals    Int                 @default(0)
+  totalEarnings     Decimal             @default(0) @db.Decimal(10, 2)
+
+  user              User                @relation(fields: [userId], references: [id])
+  referrals         AffiliateReferral[]
+  commissions       AffiliateCommission[]
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([affiliateCode])
+  @@index([status])
+  @@map("affiliate_partners")
+}
+
+model AffiliateReferral {
+  id                String           @id @default(cuid())
+  affiliateId       String
+  referredUserId    String
+  referralCode      String
+  status            String           @default("PENDING") // PENDING, CONVERTED, EXPIRED
+
+  // Conversion tracking
+  convertedAt       DateTime?
+  conversionValue   Decimal?         @db.Decimal(10, 2)
+
+  affiliate         AffiliatePartner @relation(fields: [affiliateId], references: [id])
+  referredUser      User             @relation("ReferredBy", fields: [referredUserId], references: [id])
+  referrer          User             @relation("Referrer", fields: [affiliateId], references: [userId])
+
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@unique([affiliateId, referredUserId])
+  @@index([referralCode])
+  @@index([status])
+  @@map("affiliate_referrals")
+}
+
+model AffiliateCommission {
+  id                String           @id @default(cuid())
+  affiliateId       String
+  amount            Decimal          @db.Decimal(10, 2)
+  type              String           // "REFERRAL", "RECURRING", "BONUS"
+  status            String           @default("PENDING") // PENDING, PAID, CANCELLED
+  description       String?
+
+  // Payment tracking
+  paidAt            DateTime?
+  paymentReference  String?
+
+  affiliate         AffiliatePartner @relation(fields: [affiliateId], references: [id])
+
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([affiliateId])
+  @@index([status])
+  @@map("affiliate_commissions")
+}
+
+model ChatSession {
+  id            String        @id @default(cuid())
+  userId        String
+  title         String?
+  isActive      Boolean       @default(true)
+
+  user          User          @relation(fields: [userId], references: [id])
+  messages      ChatMessage[]
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([isActive])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id            String      @id @default(cuid())
+  sessionId     String
+  role          String      // "user" or "assistant"
+  content       String
+  timestamp     DateTime    @default(now())
+
+  session       ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([timestamp])
+  @@map("chat_messages")
+}
+
+model WaitlistEntry {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  firstName     String?
+  lastName      String?
+  company       String?
+  phone         String?
+  source        String?   // Where they heard about us
+  interests     Json?     // JSON array of interests
+
+  // Status tracking
+  status        String    @default("PENDING") // PENDING, INVITED, CONVERTED
+  invitedAt     DateTime?
+  convertedAt   DateTime?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@map("waitlist_entries")
+}

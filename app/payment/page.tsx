@@ -67,7 +67,7 @@ export default function PaymentPage() {
       </nav>
 
       {/* Payment Section */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Get Flex.IA Professional
@@ -77,96 +77,99 @@ export default function PaymentPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Monthly Plan */}
-          <Card className={`relative ${!isYearly ? 'ring-2 ring-purple-500 shadow-xl' : 'hover:shadow-lg'} transition-all duration-300`}>
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl">Monthly Plan</CardTitle>
-              <CardDescription>Perfect for getting started</CardDescription>
-              <div className="text-5xl font-bold text-gray-900 dark:text-white mt-4">
-                $97
-                <span className="text-xl text-gray-600 dark:text-gray-400 font-normal">/month</span>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Billed monthly • Cancel anytime</p>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                onClick={() => handlePayment('monthly')}
-                disabled={isProcessing}
-                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-lg py-4 h-auto mb-6"
-              >
-                <CreditCard className="mr-2 h-5 w-5" />
-                {isProcessing ? 'Processing...' : 'Start Monthly Plan'}
-              </Button>
-              
-              <div className="space-y-3">
-                {[
-                  "Unlimited claims management",
-                  "150+ premium firm network",
-                  "Advanced earnings analytics",
-                  "Smart scheduling & routing",
-                  "Real-time communication hub",
-                  "Performance insights & reports",
-                  "Mobile app access",
-                  "Priority customer support"
-                ].map((feature, index) => (
-                  <div key={index} className="flex items-center gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-gray-700 dark:text-gray-300">{feature}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Yearly Plan */}
-          <Card className={`relative ${isYearly ? 'ring-2 ring-purple-500 shadow-xl' : 'hover:shadow-lg'} transition-all duration-300`}>
+        {/* Single Payment Card */}
+        <Card className="relative shadow-2xl border-2 border-purple-200 dark:border-purple-700">
+          {isYearly && (
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
               <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-1">
                 Save $180
               </Badge>
             </div>
-            <CardHeader className="text-center pt-8">
-              <CardTitle className="text-2xl">Yearly Plan</CardTitle>
-              <CardDescription>Best value for serious adjusters</CardDescription>
-              <div className="text-5xl font-bold text-gray-900 dark:text-white mt-4">
-                $82
-                <span className="text-xl text-gray-600 dark:text-gray-400 font-normal">/month</span>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Billed annually ($984/year) • 15% savings
-              </p>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                onClick={() => handlePayment('yearly')}
-                disabled={isProcessing}
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-lg py-4 h-auto mb-6"
+          )}
+
+          <CardHeader className="text-center pb-4">
+            <CardTitle className="text-3xl">Flex.IA Professional</CardTitle>
+            <CardDescription className="text-lg">Complete adjusting business platform</CardDescription>
+
+            {/* Billing Toggle */}
+            <div className="flex items-center justify-center gap-4 mt-6 mb-4">
+              <span className={`text-sm font-medium ${!isYearly ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500'}`}>
+                Monthly
+              </span>
+              <button
+                onClick={() => setIsYearly(!isYearly)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
+                  isYearly ? 'bg-green-600' : 'bg-purple-600'
+                }`}
               >
-                <CreditCard className="mr-2 h-5 w-5" />
-                {isProcessing ? 'Processing...' : 'Start Yearly Plan'}
-              </Button>
-              
-              <div className="space-y-3">
-                {[
-                  "Everything in Monthly Plan",
-                  "15% discount ($180 savings)",
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    isYearly ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <span className={`text-sm font-medium ${isYearly ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}`}>
+                Yearly
+              </span>
+            </div>
+
+            {/* Pricing Display */}
+            <div className="text-center">
+              <div className="text-6xl font-bold text-gray-900 dark:text-white">
+                ${isYearly ? '82' : '97'}
+                <span className="text-2xl text-gray-600 dark:text-gray-400 font-normal">/month</span>
+              </div>
+              <p className="text-lg text-gray-600 dark:text-gray-400 mt-2">
+                {isYearly ? (
+                  <>Billed annually ($984/year) • <span className="text-green-600 font-semibold">15% savings</span></>
+                ) : (
+                  'Billed monthly • Cancel anytime'
+                )}
+              </p>
+            </div>
+          </CardHeader>
+
+          <CardContent className="pt-4">
+            <Button
+              onClick={() => handlePayment(isYearly ? 'yearly' : 'monthly')}
+              disabled={isProcessing}
+              className={`w-full text-xl py-6 h-auto mb-8 ${
+                isYearly
+                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
+                  : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700'
+              }`}
+            >
+              <CreditCard className="mr-3 h-6 w-6" />
+              {isProcessing ? 'Processing...' : `Get Flex.IA ${isYearly ? 'Yearly' : 'Monthly'}`}
+            </Button>
+
+            {/* Features List */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Everything included:</h3>
+              {[
+                "Unlimited claims management",
+                "150+ premium firm network",
+                "Advanced earnings analytics",
+                "Smart scheduling & routing",
+                "Real-time communication hub",
+                "Performance insights & reports",
+                "Mobile app access",
+                "Priority customer support",
+                ...(isYearly ? [
                   "Priority feature requests",
                   "Dedicated account manager",
                   "Advanced reporting suite",
-                  "Custom integrations support",
-                  "Early access to new features",
-                  "Annual business review"
-                ].map((feature, index) => (
-                  <div key={index} className="flex items-center gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-gray-700 dark:text-gray-300">{feature}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                  "Early access to new features"
+                ] : [])
+              ].map((feature, index) => (
+                <div key={index} className="flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span className="text-gray-700 dark:text-gray-300">{feature}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Trust Indicators */}
         <div className="mt-12 text-center">

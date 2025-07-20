@@ -1,11 +1,22 @@
 import bcrypt from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
 import { nanoid } from 'nanoid'
+import { authenticator } from '@otplib/preset-default'
+import QRCode from 'qrcode'
 import { prisma } from './db'
+import { NextRequest } from 'next/server'
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret')
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || (() => {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET environment variable is required in production')
+    }
+    console.warn('⚠️  Using fallback JWT secret in development. Set JWT_SECRET environment variable.')
+    return 'dev-fallback-secret-change-in-production'
+  })()
+)
 
-export interface SessionData {
+export interface SessionData extends Record<string, any> {
   userId: string
   email: string
   role: string
@@ -58,27 +69,37 @@ export async function verifySession(token: string): Promise<SessionData | null> 
   }
 }
 
+// Helper function to verify session from NextRequest
+export async function verifySessionFromRequest(request: NextRequest): Promise<SessionData | null> {
+  try {
+    // Try to get token from Authorization header
+    const authHeader = request.headers.get('authorization')
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7)
+      return await verifySession(token)
+    }
+
+    // Try to get token from cookies
+    const tokenCookie = request.cookies.get('session-token')
+    if (tokenCookie) {
+      return await verifySession(tokenCookie.value)
+    }
+
+    return null
+  } catch (error) {
+    return null
+  }
+}
+
 export async function deleteSession(userId: string): Promise<void> {
   await prisma.session.deleteMany({
     where: { userId }
   })
 }
 
-export async function generateTwoFactorSecret(): Promise<string> {
-  // Generate a base32 secret for TOTP
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
-  let secret = ''
-  for (let i = 0; i < 32; i++) {
-    secret += chars[Math.floor(Math.random() * chars.length)]
-  }
-  return secret
-}
+// Removed duplicate function - using speakeasy implementation below
 
-export async function verifyTwoFactorToken(secret: string, token: string): Promise<boolean> {
-  // In a real implementation, you would use a library like 'speakeasy' to verify TOTP tokens
-  // For now, we'll use a simple demo implementation
-  return token === '123456' // Demo implementation
-}
+// Removed duplicate function - using speakeasy implementation below
 
 export async function createPasswordResetToken(email: string): Promise<string> {
   const user = await prisma.user.findUnique({ where: { email } })
@@ -162,4 +183,30 @@ export async function verifyEmailToken(token: string): Promise<boolean> {
   await prisma.token.delete({ where: { id: tokenRecord.id } })
 
   return true
+}
+
+export function generateTwoFactorSecret(): string {
+  return authenticator.generateSecret()
+}
+
+export async function generateQRCode(email: string, secret: string): Promise<string> {
+  const otpAuthUrl = authenticator.keyuri(email, 'Flex.IA', secret)
+  return QRCode.toDataURL(otpAuthUrl)
+}
+
+export async function verifyTwoFactorToken(secret: string, token: string): Promise<boolean> {
+  try {
+    return authenticator.verify({ token, secret })
+  } catch (error) {
+    console.error('2FA verification error:', error)
+    return false
+  }
+}
+
+export async function generateBackupCodes(): Promise<string[]> {
+  const codes = []
+  for (let i = 0; i < 10; i++) {
+    codes.push(nanoid(8).toUpperCase())
+  }
+  return codes
 }

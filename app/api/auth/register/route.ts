@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
         hashedPassword,
         phone: userData.phone,
         licenseNumber: userData.licenseNumber,
-        specialties: userData.specialties || [],
+        specialties: userData.specialties ? JSON.stringify(userData.specialties) : null,
         yearsExperience: userData.yearsExperience,
         hourlyRate: userData.hourlyRate,
         travelRadius: userData.travelRadius,

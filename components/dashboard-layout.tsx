@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+
 import {
   Bell,
   Building2,
@@ -31,15 +31,24 @@ import {
   Vault,
   Search,
   MessageSquare,
-  Menu,
+
   Activity,
   FileBarChart,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  Edit3,
+  Menu,
+  Plus,
+  Save,
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { GlobalSearch } from "@/components/global-search"
+import SidebarAIChat from "@/components/sidebar-ai-chat"
+import AIChatWidget from "@/components/ai-chat-widget"
+
 
 const navigationItems = [
   {
@@ -147,13 +156,28 @@ const notifications = [
   },
 ]
 
-export function DashboardLayout({ children }: { children: React.ReactNode }) {
+interface DashboardLayoutProps {
+  children: React.ReactNode
+  dashboardControls?: {
+    editMode: boolean
+    onEditModeChange: (editMode: boolean) => void
+    onAddWidget: () => void
+    isAddingWidget: boolean
+    widgetsDropdownOpen: boolean
+    availableWidgets: Array<{
+      id: string
+      title: string
+      icon: React.ComponentType<{ className?: string }>
+    }>
+    onWidgetAdd: (widgetId: string) => void
+  }
+}
+
+export function DashboardLayout({ children, dashboardControls }: DashboardLayoutProps) {
   const [sidebarExpanded, setSidebarExpanded] = useState(true)
   const [notificationsList, setNotificationsList] = useState(notifications)
   const [showNotifications, setShowNotifications] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [searchResults, setSearchResults] = useState([])
-  const [showSearchResults, setShowSearchResults] = useState(false)
+  const [showGlobalSearch, setShowGlobalSearch] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
 
@@ -165,6 +189,19 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  // Global search keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setShowGlobalSearch(true)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   // Save sidebar state to localStorage when it changes
   const toggleSidebar = () => {
     const newState = !sidebarExpanded
@@ -174,21 +211,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const unreadCount = notificationsList.filter((n) => n.unread).length
 
-  // Search functionality
-  useEffect(() => {
-    if (searchTerm.trim()) {
-      const results = searchData.filter(
-        (item) =>
-          item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.id.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
-      setSearchResults(results)
-      setShowSearchResults(true)
-    } else {
-      setSearchResults([])
-      setShowSearchResults(false)
-    }
-  }, [searchTerm])
+
 
   const handleLogout = () => {
     router.push("/auth/login")
@@ -215,70 +238,65 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     return pathname.startsWith(url)
   }
 
-  const handleSearchSelect = (item: any) => {
-    router.push(item.url)
-    setSearchTerm("")
-    setShowSearchResults(false)
-  }
+
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Skip to main content link for screen readers */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        Skip to main content
+      </a>
+
+      {/* Mobile Sidebar Overlay */}
+      {sidebarExpanded && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          onClick={toggleSidebar}
+          aria-label="Close sidebar"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              toggleSidebar()
+            }
+          }}
+        />
+      )}
+
       {/* Sidebar */}
-      <div
-        className={`fixed left-0 top-0 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-50 ${
-          sidebarExpanded ? "w-64" : "w-16"
-        }`}
+      <aside
+        className={`fixed left-0 top-0 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-40
+          ${sidebarExpanded
+            ? "w-64 translate-x-0"
+            : "w-64 -translate-x-full lg:w-16 lg:translate-x-0"
+          }`}
+        role="navigation"
+        aria-label="Main navigation"
+        aria-expanded={sidebarExpanded}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          {sidebarExpanded && (
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">F</span>
-              </div>
-              <span className="font-semibold text-gray-900 dark:text-white">Flex.IA</span>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">F</span>
             </div>
-          )}
-          <Button variant="ghost" size="sm" onClick={toggleSidebar} className="p-1.5">
+            {sidebarExpanded && (
+              <span className="font-semibold text-gray-900 dark:text-white">Flex.IA</span>
+            )}
+          </div>
+          <Button variant="ghost" size="sm" onClick={toggleSidebar} className="p-1.5 lg:hidden">
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={toggleSidebar} className="p-1.5 hidden lg:block">
             {sidebarExpanded ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </Button>
         </div>
 
-        {/* Search */}
-        {sidebarExpanded && (
-          <div className="p-4 relative">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600"
-              />
-            </div>
 
-            {/* Search Results */}
-            {showSearchResults && searchResults.length > 0 && (
-              <div className="absolute top-full left-4 right-4 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
-                {searchResults.map((item, index) => (
-                  <div
-                    key={index}
-                    className="p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0"
-                    onClick={() => handleSearchSelect(item)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        {item.type}
-                      </Badge>
-                      <span className="text-sm font-medium">{item.title}</span>
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">{item.id}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Navigation */}
         <div className="flex-1 overflow-y-auto">
@@ -290,7 +308,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </div>
           )}
 
-          <nav className="px-2 space-y-1">
+          <nav className="px-2 space-y-1" role="navigation" aria-label="Main menu">
             {navigationItems.map((item) => {
               const active = isActive(item.url)
               return (
@@ -302,6 +320,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
                     } ${!sidebarExpanded ? "justify-center" : ""}`}
                     title={!sidebarExpanded ? item.title : undefined}
+                    role="menuitem"
+                    aria-current={active ? "page" : undefined}
+                    aria-label={item.title}
                   >
                     <div className="relative">
                       <item.icon className={`h-5 w-5 ${active ? "text-purple-600 dark:text-purple-400" : ""}`} />
@@ -333,64 +354,141 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             })}
           </nav>
         </div>
-      </div>
+
+        {/* AI Chat Assistant at bottom of sidebar */}
+        <div className="mt-auto">
+          <SidebarAIChat sidebarExpanded={sidebarExpanded} />
+        </div>
+      </aside>
 
       {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 ${sidebarExpanded ? "ml-64" : "ml-16"}`}>
+      <div className={`flex-1 transition-all duration-300 ${
+        sidebarExpanded
+          ? "lg:ml-64"
+          : "lg:ml-16"
+      }`}>
         {/* Top Navigation */}
-        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+        <header
+          className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4"
+          role="banner"
+          aria-label="Page header"
+        >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {/* Mobile menu button */}
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="sm" className="md:hidden">
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-64 p-0">
-                  <SheetHeader className="p-4 border-b">
-                    <SheetTitle className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">F</span>
-                      </div>
-                      Flex.IA
-                    </SheetTitle>
-                    <SheetDescription>Independent Adjuster Platform</SheetDescription>
-                  </SheetHeader>
-                  <nav className="p-2 space-y-1">
-                    {navigationItems.map((item) => {
-                      const active = isActive(item.url)
-                      return (
-                        <Link key={item.title} href={item.url}>
-                          <div
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                              active
-                                ? "bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300"
-                                : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                            }`}
-                          >
-                            <item.icon className="h-5 w-5" />
-                            <span className="font-medium">{item.title}</span>
-                            {item.badge && (
-                              <Badge className="ml-auto text-xs bg-red-500 text-white">{item.badge}</Badge>
-                            )}
-                          </div>
-                        </Link>
-                      )
-                    })}
-                  </nav>
-                </SheetContent>
-              </Sheet>
+            {/* Left side - Mobile Menu + Search Bar */}
+            <div className="flex items-center gap-4 flex-1">
+              {/* Mobile Menu Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleSidebar}
+                className="lg:hidden p-2 z-50 relative"
+                aria-label="Toggle sidebar menu"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
 
-              <div className="hidden md:block">
-                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  {navigationItems.find((item) => isActive(item.url))?.title || "Dashboard"}
-                </h1>
+              {/* Global Search */}
+              <div className="max-w-md w-full">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowGlobalSearch(true)}
+                  className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                  aria-label="Open global search"
+                  aria-haspopup="dialog"
+                >
+                  <Search className="h-4 w-4" aria-hidden="true" />
+                  <span className="text-sm hidden sm:inline">Search claims, firms, documents...</span>
+                  <span className="text-sm sm:hidden">Search...</span>
+                  <kbd className="ml-auto pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+                    <span className="text-xs">⌘</span>K
+                  </kbd>
+                </Button>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            {/* Right side - Dashboard Controls + User Menu */}
+            <div className="flex items-center gap-4">
+              {/* Dashboard Controls - Only show on dashboard page */}
+              {pathname === '/dashboard' && dashboardControls && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant={dashboardControls.editMode ? "default" : "outline"}
+                    size="icon"
+                    onClick={() => dashboardControls.onEditModeChange(!dashboardControls.editMode)}
+                    className="h-8 w-8"
+                    title={dashboardControls.editMode ? "Done editing" : "Edit dashboard"}
+                  >
+                    {dashboardControls.editMode ? (
+                      <Save className="h-4 w-4" />
+                    ) : (
+                      <Edit3 className="h-4 w-4" />
+                    )}
+                  </Button>
+
+                  {/* Add Widget Dropdown */}
+                  <div className="relative">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={dashboardControls.onAddWidget}
+                      className="h-8 w-8"
+                      disabled={dashboardControls.isAddingWidget}
+                      title="Add widget"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+
+                    {dashboardControls.widgetsDropdownOpen && (
+                      <>
+                        {/* Backdrop */}
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={dashboardControls.onAddWidget}
+                        />
+
+                        {/* Dropdown Menu */}
+                        <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+                          <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                            <h3 className="font-medium text-gray-900 dark:text-white">Available Widgets</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Add widgets to your dashboard</p>
+                          </div>
+
+                          <div className="p-2">
+                            {dashboardControls.availableWidgets.map(widget => {
+                              const Icon = widget.icon
+
+                              return (
+                                <button
+                                  key={widget.id}
+                                  className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors text-left"
+                                  onClick={() => dashboardControls.onWidgetAdd(widget.id)}
+                                >
+                                  <Icon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                                  <div>
+                                    <div className="font-medium text-gray-900 dark:text-white">{widget.title}</div>
+                                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                                      Click to add to dashboard
+                                    </div>
+                                  </div>
+                                </button>
+                              )
+                            })}
+
+                            {dashboardControls.availableWidgets.length === 0 && (
+                              <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                                <div className="text-sm">All widgets are currently active</div>
+                                <div className="text-xs mt-1">Remove widgets to add different ones</div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Theme Toggle */}
               <ThemeToggle />
 
@@ -517,8 +615,26 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Page Content */}
-        <main className="p-6">{children}</main>
+        <main
+          id="main-content"
+          className="p-6"
+          role="main"
+          aria-label="Main content"
+          tabIndex={-1}
+        >
+          {children}
+        </main>
       </div>
+
+      {/* Global Search Modal */}
+      <GlobalSearch
+        isOpen={showGlobalSearch}
+        onClose={() => setShowGlobalSearch(false)}
+      />
+
+      {/* AI Chat Widget - Floating */}
+      <AIChatWidget />
+
     </div>
   )
 }

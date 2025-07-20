@@ -22,10 +22,34 @@ import {
   Target,
 } from "lucide-react"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { FilterBar } from "@/components/ui/filter-bar"
+import { earningsFilterConfig } from "@/lib/filter-configs"
 
 export default function EarningsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState("month")
   const [selectedYear, setSelectedYear] = useState("2024")
+  const [searchTerm, setSearchTerm] = useState("")
+
+  // Standardized filter state
+  const [activeFilters, setActiveFilters] = useState({
+    period: 'month',
+    status: 'all',
+    firm: 'all'
+  })
+
+  // Filter handling functions
+  const handleFilterChange = (key: string, value: string) => {
+    setActiveFilters(prev => ({ ...prev, [key]: value }))
+  }
+
+  const handleClearAllFilters = () => {
+    setActiveFilters({
+      period: 'month',
+      status: 'all',
+      firm: 'all'
+    })
+    setSearchTerm('')
+  }
 
   // Comprehensive earnings data for independent adjusters
   const earningsOverview = {
@@ -220,13 +244,7 @@ export default function EarningsPage() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">Earnings Dashboard</h1>
-            <p className="text-muted-foreground">
-              Comprehensive earnings tracking and financial insights for independent adjusters
-            </p>
-          </div>
+        <div className="flex justify-end">
           <div className="flex items-center gap-2">
             <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
               <SelectTrigger className="w-32">
@@ -245,55 +263,69 @@ export default function EarningsPage() {
           </div>
         </div>
 
+        {/* Standardized Filter Bar */}
+        <FilterBar
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Search payments, claims, firms..."
+          filters={earningsFilterConfig}
+          activeFilters={activeFilters}
+          onFilterChange={handleFilterChange}
+          onClearAll={handleClearAllFilters}
+          showSearch={true}
+          showFilterToggle={true}
+          className="rounded-lg border"
+        />
+
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-4 gap-1 sm:gap-2 md:gap-3 lg:gap-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Monthly Earnings</CardTitle>
-              <DollarSign className="h-4 w-4 text-green-600" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+              <CardTitle className="text-xs font-medium truncate">Monthly Earnings</CardTitle>
+              <DollarSign className="h-3 w-3 text-green-600 flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(earningsOverview.currentMonth.total)}</div>
+            <CardContent className="px-2 pb-2">
+              <div className="text-sm sm:text-lg md:text-xl font-bold">{formatCurrency(earningsOverview.currentMonth.total)}</div>
               <div className="flex items-center text-xs text-muted-foreground">
                 <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
-                {formatPercentage(earningsOverview.currentMonth.growth)} from last month
+                <span className="truncate">{formatPercentage(earningsOverview.currentMonth.growth)} from last month</span>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Yearly Earnings</CardTitle>
-              <BarChart3 className="h-4 w-4 text-blue-600" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+              <CardTitle className="text-xs font-medium truncate">Yearly Earnings</CardTitle>
+              <BarChart3 className="h-3 w-3 text-blue-600 flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(earningsOverview.currentYear.total)}</div>
+            <CardContent className="px-2 pb-2">
+              <div className="text-sm sm:text-lg md:text-xl font-bold">{formatCurrency(earningsOverview.currentYear.total)}</div>
               <div className="flex items-center text-xs text-muted-foreground">
                 <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
-                {formatPercentage(earningsOverview.currentYear.growth)} from last year
+                <span className="truncate">{formatPercentage(earningsOverview.currentYear.growth)} from last year</span>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg Per Claim</CardTitle>
-              <Target className="h-4 w-4 text-purple-600" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+              <CardTitle className="text-xs font-medium truncate">Avg Per Claim</CardTitle>
+              <Target className="h-3 w-3 text-purple-600 flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(earningsOverview.currentMonth.avgPerClaim)}</div>
-              <p className="text-xs text-muted-foreground">{earningsOverview.currentMonth.claims} claims this month</p>
+            <CardContent className="px-2 pb-2">
+              <div className="text-sm sm:text-lg md:text-xl font-bold">{formatCurrency(earningsOverview.currentMonth.avgPerClaim)}</div>
+              <p className="text-xs text-muted-foreground truncate">{earningsOverview.currentMonth.claims} claims this month</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Payments</CardTitle>
-              <Clock className="h-4 w-4 text-orange-600" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+              <CardTitle className="text-xs font-medium truncate">Pending Payments</CardTitle>
+              <Clock className="h-3 w-3 text-orange-600 flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(earningsOverview.pending.amount)}</div>
-              <p className="text-xs text-muted-foreground">
+            <CardContent className="px-2 pb-2">
+              <div className="text-sm sm:text-lg md:text-xl font-bold">{formatCurrency(earningsOverview.pending.amount)}</div>
+              <p className="text-xs text-muted-foreground truncate">
                 {earningsOverview.pending.claims} claims • Due {earningsOverview.pending.expectedDate}
               </p>
             </CardContent>
@@ -302,14 +334,34 @@ export default function EarningsPage() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="firms">By Firm</TabsTrigger>
-            <TabsTrigger value="types">By Type</TabsTrigger>
-            <TabsTrigger value="payments">Payments</TabsTrigger>
-            <TabsTrigger value="taxes">Tax Info</TabsTrigger>
-            <TabsTrigger value="performance">Performance</TabsTrigger>
-          </TabsList>
+          <div className="w-full">
+            <TabsList className="grid grid-cols-6 w-full h-6">
+              <TabsTrigger value="overview" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">Overview</span>
+                <span className="sm:hidden">Overview</span>
+              </TabsTrigger>
+              <TabsTrigger value="firms" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">By Firm</span>
+                <span className="sm:hidden">Firms</span>
+              </TabsTrigger>
+              <TabsTrigger value="types" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">By Type</span>
+                <span className="sm:hidden">Types</span>
+              </TabsTrigger>
+              <TabsTrigger value="payments" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">Payments</span>
+                <span className="sm:hidden">Pay</span>
+              </TabsTrigger>
+              <TabsTrigger value="taxes" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">Tax Info</span>
+                <span className="sm:hidden">Tax</span>
+              </TabsTrigger>
+              <TabsTrigger value="performance" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">Performance</span>
+                <span className="sm:hidden">Perf</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="overview" className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

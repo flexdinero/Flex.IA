@@ -49,16 +49,6 @@ export async function GET(
             claimNumber: true,
             title: true
           }
-        },
-        documents: {
-          select: {
-            id: true,
-            filename: true,
-            originalName: true,
-            url: true,
-            mimeType: true,
-            size: true
-          }
         }
       }
     })

@@ -33,12 +33,34 @@ import {
   Building2,
 } from "lucide-react"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { FilterBar } from "@/components/ui/filter-bar"
+import { calendarFilterConfig } from "@/lib/filter-configs"
 
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [showAddInspection, setShowAddInspection] = useState(false)
   const [selectedInspection, setSelectedInspection] = useState<any>(null)
   const [viewMode, setViewMode] = useState("month")
+  const [searchTerm, setSearchTerm] = useState("")
+
+  // Standardized filter state
+  const [activeFilters, setActiveFilters] = useState({
+    type: 'all',
+    status: 'all'
+  })
+
+  // Filter handling functions
+  const handleFilterChange = (key: string, value: string) => {
+    setActiveFilters(prev => ({ ...prev, [key]: value }))
+  }
+
+  const handleClearAllFilters = () => {
+    setActiveFilters({
+      type: 'all',
+      status: 'all'
+    })
+    setSearchTerm('')
+  }
 
   const inspections = [
     {
@@ -378,65 +400,93 @@ export default function CalendarPage() {
           </div>
         </div>
 
+        {/* Standardized Filter Bar */}
+        <FilterBar
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Search inspections, claims, locations..."
+          filters={calendarFilterConfig}
+          activeFilters={activeFilters}
+          onFilterChange={handleFilterChange}
+          onClearAll={handleClearAllFilters}
+          showSearch={true}
+          showFilterToggle={true}
+          className="rounded-lg border"
+        />
+
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-4 gap-1 sm:gap-2 md:gap-3 lg:gap-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Today's Inspections</CardTitle>
-              <Calendar className="h-4 w-4 text-blue-600" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+              <CardTitle className="text-xs font-medium truncate">Today's Inspections</CardTitle>
+              <Calendar className="h-3 w-3 text-blue-600 flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{todayInspections.length}</div>
-              <p className="text-xs text-muted-foreground">
+            <CardContent className="px-2 pb-2">
+              <div className="text-sm sm:text-lg md:text-xl font-bold">{todayInspections.length}</div>
+              <p className="text-xs text-muted-foreground truncate">
                 {todayInspections.length > 0 ? `Next at ${todayInspections[0]?.time}` : "No inspections today"}
               </p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">This Week</CardTitle>
-              <Clock className="h-4 w-4 text-green-600" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+              <CardTitle className="text-xs font-medium truncate">This Week</CardTitle>
+              <Clock className="h-3 w-3 text-green-600 flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{upcomingInspections.length}</div>
-              <p className="text-xs text-muted-foreground">Upcoming inspections</p>
+            <CardContent className="px-2 pb-2">
+              <div className="text-sm sm:text-lg md:text-xl font-bold">{upcomingInspections.length}</div>
+              <p className="text-xs text-muted-foreground truncate">Upcoming inspections</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">High Priority</CardTitle>
-              <AlertCircle className="h-4 w-4 text-red-600" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+              <CardTitle className="text-xs font-medium truncate">High Priority</CardTitle>
+              <AlertCircle className="h-3 w-3 text-red-600 flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
+            <CardContent className="px-2 pb-2">
+              <div className="text-sm sm:text-lg md:text-xl font-bold">
                 {inspections.filter((i) => i.priority === "High" && i.status !== "Completed").length}
               </div>
-              <p className="text-xs text-muted-foreground">Require immediate attention</p>
+              <p className="text-xs text-muted-foreground truncate">Require immediate attention</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completed</CardTitle>
-              <CheckCircle className="h-4 w-4 text-gray-600" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+              <CardTitle className="text-xs font-medium truncate">Completed</CardTitle>
+              <CheckCircle className="h-3 w-3 text-gray-600 flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{inspections.filter((i) => i.status === "Completed").length}</div>
-              <p className="text-xs text-muted-foreground">This month</p>
+            <CardContent className="px-2 pb-2">
+              <div className="text-sm sm:text-lg md:text-xl font-bold">{inspections.filter((i) => i.status === "Completed").length}</div>
+              <p className="text-xs text-muted-foreground truncate">This month</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Main Content - Changed order to start with Calendar View */}
         <Tabs defaultValue="calendar" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="calendar">Calendar View</TabsTrigger>
-            <TabsTrigger value="today">Today</TabsTrigger>
-            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-          </TabsList>
+          <div className="w-full">
+            <TabsList className="grid grid-cols-4 w-full h-6">
+              <TabsTrigger value="calendar" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">Calendar View</span>
+                <span className="sm:hidden">Calendar</span>
+              </TabsTrigger>
+              <TabsTrigger value="today" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">Today</span>
+                <span className="sm:hidden">Today</span>
+              </TabsTrigger>
+              <TabsTrigger value="upcoming" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">Upcoming</span>
+                <span className="sm:hidden">Upcoming</span>
+              </TabsTrigger>
+              <TabsTrigger value="completed" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">Completed</span>
+                <span className="sm:hidden">Done</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="calendar" className="space-y-4">
             <Card>

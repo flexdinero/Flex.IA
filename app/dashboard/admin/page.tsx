@@ -309,64 +309,90 @@ export default function AdminPage() {
         </div>
 
         {/* System Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-4 gap-1 sm:gap-2 md:gap-3 lg:gap-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-              <Users className="h-4 w-4 text-blue-600" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+              <CardTitle className="text-xs font-medium truncate">Total Users</CardTitle>
+              <Users className="h-3 w-3 text-blue-600 flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{systemStats.totalUsers.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">{systemStats.activeUsers} active users</p>
+            <CardContent className="px-2 pb-2">
+              <div className="text-sm sm:text-lg md:text-xl font-bold">{systemStats.totalUsers.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground truncate">{systemStats.activeUsers} active users</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Claims</CardTitle>
-              <Activity className="h-4 w-4 text-green-600" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+              <CardTitle className="text-xs font-medium truncate">Total Claims</CardTitle>
+              <Activity className="h-3 w-3 text-green-600 flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{systemStats.totalClaims.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">{systemStats.activeClaims.toLocaleString()} active</p>
+            <CardContent className="px-2 pb-2">
+              <div className="text-sm sm:text-lg md:text-xl font-bold">{systemStats.totalClaims.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground truncate">{systemStats.activeClaims.toLocaleString()} active</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Connected Firms</CardTitle>
-              <Shield className="h-4 w-4 text-purple-600" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+              <CardTitle className="text-xs font-medium truncate">Connected Firms</CardTitle>
+              <Shield className="h-3 w-3 text-purple-600 flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{systemStats.connectedFirms}</div>
-              <p className="text-xs text-muted-foreground">of {systemStats.totalFirms} total firms</p>
+            <CardContent className="px-2 pb-2">
+              <div className="text-sm sm:text-lg md:text-xl font-bold">{systemStats.connectedFirms}</div>
+              <p className="text-xs text-muted-foreground truncate">of {systemStats.totalFirms} total firms</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">System Uptime</CardTitle>
-              <Server className="h-4 w-4 text-orange-600" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+              <CardTitle className="text-xs font-medium truncate">System Uptime</CardTitle>
+              <Server className="h-3 w-3 text-orange-600 flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{systemStats.systemUptime}</div>
-              <p className="text-xs text-muted-foreground">{systemStats.avgResponseTime} avg response</p>
+            <CardContent className="px-2 pb-2">
+              <div className="text-sm sm:text-lg md:text-xl font-bold">{systemStats.systemUptime}</div>
+              <p className="text-xs text-muted-foreground truncate">{systemStats.avgResponseTime} avg response</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Admin Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-8">
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="sales">Sales</TabsTrigger>
-            <TabsTrigger value="customers">Customers</TabsTrigger>
-            <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
-            <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
-            <TabsTrigger value="firms">Firms</TabsTrigger>
-            <TabsTrigger value="system">System</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
+          <div className="w-full">
+            <TabsList className="grid grid-cols-8 w-full h-6">
+              <TabsTrigger value="dashboard" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">Dashboard</span>
+                <span className="sm:hidden">Dash</span>
+              </TabsTrigger>
+              <TabsTrigger value="sales" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">Sales</span>
+                <span className="sm:hidden">Sales</span>
+              </TabsTrigger>
+              <TabsTrigger value="customers" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">Customers</span>
+                <span className="sm:hidden">Users</span>
+              </TabsTrigger>
+              <TabsTrigger value="subscriptions" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">Subscriptions</span>
+                <span className="sm:hidden">Subs</span>
+              </TabsTrigger>
+              <TabsTrigger value="waitlist" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">Waitlist</span>
+                <span className="sm:hidden">Wait</span>
+              </TabsTrigger>
+              <TabsTrigger value="firms" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">Firms</span>
+                <span className="sm:hidden">Firms</span>
+              </TabsTrigger>
+              <TabsTrigger value="system" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">System</span>
+                <span className="sm:hidden">System</span>
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">Settings</span>
+                <span className="sm:hidden">Config</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="dashboard" className="space-y-4">
             {/* Business Metrics */}

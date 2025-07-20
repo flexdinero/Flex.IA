@@ -10,10 +10,32 @@ import { Progress } from "@/components/ui/progress"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { TrendingUp, TrendingDown, DollarSign, Target, FileText, Award, AlertTriangle, Download } from "lucide-react"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { FilterBar } from "@/components/ui/filter-bar"
+import { analyticsFilterConfig } from "@/lib/filter-configs"
 
 export default function AnalyticsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState("month")
   const [selectedMetric, setSelectedMetric] = useState("earnings")
+  const [searchTerm, setSearchTerm] = useState("")
+
+  // Standardized filter state
+  const [activeFilters, setActiveFilters] = useState({
+    metric: 'all',
+    period: 'month'
+  })
+
+  // Filter handling functions
+  const handleFilterChange = (key: string, value: string) => {
+    setActiveFilters(prev => ({ ...prev, [key]: value }))
+  }
+
+  const handleClearAllFilters = () => {
+    setActiveFilters({
+      metric: 'all',
+      period: 'month'
+    })
+    setSearchTerm('')
+  }
 
   // Comprehensive analytics data
   const performanceMetrics = {
@@ -265,55 +287,66 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
+        {/* Standardized Filter Bar */}
+        <FilterBar
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Search metrics, reports, data..."
+          filters={analyticsFilterConfig}
+          activeFilters={activeFilters}
+          onFilterChange={handleFilterChange}
+          onClearAll={handleClearAllFilters}
+          showSearch={true}
+          showFilterToggle={true}
+          className="rounded-lg border"
+        />
+
         {/* Key Performance Indicators */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-4 gap-1 sm:gap-2 md:gap-3 lg:gap-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Monthly Earnings</CardTitle>
-              <DollarSign className="h-4 w-4 text-green-600" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+              <CardTitle className="text-xs font-medium truncate">Monthly Earnings</CardTitle>
+              <DollarSign className="h-3 w-3 text-green-600 flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(performanceMetrics.earnings.current)}</div>
+            <CardContent className="px-2 pb-2">
+              <div className="text-sm sm:text-lg md:text-xl font-bold">{formatCurrency(performanceMetrics.earnings.current)}</div>
               <div className="flex items-center text-xs text-muted-foreground">
                 {getGrowthIcon(performanceMetrics.earnings.growth)}
-                <span className={`ml-1 ${getGrowthColor(performanceMetrics.earnings.growth)}`}>
-                  {formatPercentage(performanceMetrics.earnings.growth)}
+                <span className={`ml-1 ${getGrowthColor(performanceMetrics.earnings.growth)} truncate`}>
+                  {formatPercentage(performanceMetrics.earnings.growth)} from last month
                 </span>
-                <span className="ml-1">from last month</span>
               </div>
-              <div className="mt-2">
+              <div className="mt-1">
                 <Progress
                   value={(performanceMetrics.earnings.current / performanceMetrics.earnings.target) * 100}
-                  className="h-2"
+                  className="h-1"
                 />
-                <div className="text-xs text-muted-foreground mt-1">
-                  {((performanceMetrics.earnings.current / performanceMetrics.earnings.target) * 100).toFixed(0)}% of
-                  target
+                <div className="text-xs text-muted-foreground mt-1 truncate">
+                  {((performanceMetrics.earnings.current / performanceMetrics.earnings.target) * 100).toFixed(0)}% of target
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Claims Processed</CardTitle>
-              <FileText className="h-4 w-4 text-blue-600" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+              <CardTitle className="text-xs font-medium truncate">Claims Processed</CardTitle>
+              <FileText className="h-3 w-3 text-blue-600 flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{performanceMetrics.claims.current}</div>
+            <CardContent className="px-2 pb-2">
+              <div className="text-sm sm:text-lg md:text-xl font-bold">{performanceMetrics.claims.current}</div>
               <div className="flex items-center text-xs text-muted-foreground">
                 {getGrowthIcon(performanceMetrics.claims.growth)}
-                <span className={`ml-1 ${getGrowthColor(performanceMetrics.claims.growth)}`}>
-                  {formatPercentage(performanceMetrics.claims.growth)}
+                <span className={`ml-1 ${getGrowthColor(performanceMetrics.claims.growth)} truncate`}>
+                  {formatPercentage(performanceMetrics.claims.growth)} from last month
                 </span>
-                <span className="ml-1">from last month</span>
               </div>
-              <div className="mt-2">
+              <div className="mt-1">
                 <Progress
                   value={(performanceMetrics.claims.current / performanceMetrics.claims.target) * 100}
-                  className="h-2"
+                  className="h-1"
                 />
-                <div className="text-xs text-muted-foreground mt-1">
+                <div className="text-xs text-muted-foreground mt-1 truncate">
                   {((performanceMetrics.claims.current / performanceMetrics.claims.target) * 100).toFixed(0)}% of target
                 </div>
               </div>
@@ -321,22 +354,21 @@ export default function AnalyticsPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Efficiency Score</CardTitle>
-              <Target className="h-4 w-4 text-purple-600" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+              <CardTitle className="text-xs font-medium truncate">Efficiency Score</CardTitle>
+              <Target className="h-3 w-3 text-purple-600 flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{performanceMetrics.efficiency.current}%</div>
+            <CardContent className="px-2 pb-2">
+              <div className="text-sm sm:text-lg md:text-xl font-bold">{performanceMetrics.efficiency.current}%</div>
               <div className="flex items-center text-xs text-muted-foreground">
                 {getGrowthIcon(performanceMetrics.efficiency.growth)}
-                <span className={`ml-1 ${getGrowthColor(performanceMetrics.efficiency.growth)}`}>
-                  {formatPercentage(performanceMetrics.efficiency.growth)}
+                <span className={`ml-1 ${getGrowthColor(performanceMetrics.efficiency.growth)} truncate`}>
+                  {formatPercentage(performanceMetrics.efficiency.growth)} from last month
                 </span>
-                <span className="ml-1">from last month</span>
               </div>
-              <div className="mt-2">
-                <Progress value={performanceMetrics.efficiency.current} className="h-2" />
-                <div className="text-xs text-muted-foreground mt-1">
+              <div className="mt-1">
+                <Progress value={performanceMetrics.efficiency.current} className="h-1" />
+                <div className="text-xs text-muted-foreground mt-1 truncate">
                   Avg {performanceMetrics.efficiency.avgDaysToComplete} days to complete
                 </div>
               </div>
@@ -344,22 +376,21 @@ export default function AnalyticsPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Client Satisfaction</CardTitle>
-              <Award className="h-4 w-4 text-orange-600" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+              <CardTitle className="text-xs font-medium truncate">Client Satisfaction</CardTitle>
+              <Award className="h-3 w-3 text-orange-600 flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{performanceMetrics.satisfaction.current}/5.0</div>
+            <CardContent className="px-2 pb-2">
+              <div className="text-sm sm:text-lg md:text-xl font-bold">{performanceMetrics.satisfaction.current}/5.0</div>
               <div className="flex items-center text-xs text-muted-foreground">
                 {getGrowthIcon(performanceMetrics.satisfaction.growth)}
-                <span className={`ml-1 ${getGrowthColor(performanceMetrics.satisfaction.growth)}`}>
-                  {formatPercentage(performanceMetrics.satisfaction.growth)}
+                <span className={`ml-1 ${getGrowthColor(performanceMetrics.satisfaction.growth)} truncate`}>
+                  {formatPercentage(performanceMetrics.satisfaction.growth)} from last month
                 </span>
-                <span className="ml-1">from last month</span>
               </div>
-              <div className="mt-2">
-                <Progress value={(performanceMetrics.satisfaction.current / 5) * 100} className="h-2" />
-                <div className="text-xs text-muted-foreground mt-1">
+              <div className="mt-1">
+                <Progress value={(performanceMetrics.satisfaction.current / 5) * 100} className="h-1" />
+                <div className="text-xs text-muted-foreground mt-1 truncate">
                   Based on {performanceMetrics.satisfaction.totalReviews} reviews
                 </div>
               </div>
@@ -369,14 +400,31 @@ export default function AnalyticsPage() {
 
         {/* Main Analytics Tabs */}
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="firms">Firms</TabsTrigger>
-            <TabsTrigger value="claims">Claims</TabsTrigger>
-            <TabsTrigger value="time">Time Analysis</TabsTrigger>
-            <TabsTrigger value="competitive">Competitive</TabsTrigger>
-            <TabsTrigger value="forecasting">Forecasting</TabsTrigger>
-          </TabsList>
+          <div className="w-full">
+            <TabsList className="grid grid-cols-6 w-full h-6">
+              <TabsTrigger value="overview" className="text-xs px-0.5 py-0.5 h-5">
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="firms" className="text-xs px-0.5 py-0.5 h-5">
+                Firms
+              </TabsTrigger>
+              <TabsTrigger value="claims" className="text-xs px-0.5 py-0.5 h-5">
+                Claims
+              </TabsTrigger>
+              <TabsTrigger value="time" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">Time Analysis</span>
+                <span className="sm:hidden">Time</span>
+              </TabsTrigger>
+              <TabsTrigger value="competitive" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">Competitive</span>
+                <span className="sm:hidden">Comp</span>
+              </TabsTrigger>
+              <TabsTrigger value="forecasting" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">Forecasting</span>
+                <span className="sm:hidden">Forecast</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="overview" className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

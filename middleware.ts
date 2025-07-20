@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySession } from './lib/auth'
 import { createRateLimitMiddleware } from './lib/rate-limit'
+import { securityMiddleware, honeypotMiddleware, csrfProtection } from './middleware/security'
+import { logSecurityEvent, extractClientIP } from './lib/security'
 
 // Security headers configuration
 const securityHeaders = {
@@ -25,9 +27,26 @@ function generateCSPNonce(): string {
 }
 
 function createCSPHeader(nonce?: string): string {
+  // In development, be more permissive to allow Next.js hot reload and React hydration
+  if (process.env.NODE_ENV === 'development') {
+    const directives = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "font-src 'self' https://fonts.gstatic.com",
+      "img-src 'self' data: https:",
+      "connect-src 'self' ws: wss:",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'"
+    ]
+    return directives.join('; ')
+  }
+
+  // Production CSP with nonce support
   const directives = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'" + (nonce ? ` 'nonce-${nonce}'` : ''),
+    "script-src 'self'" + (nonce ? ` 'nonce-${nonce}'` : " 'unsafe-inline'"),
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https:",
@@ -43,9 +62,32 @@ function createCSPHeader(nonce?: string): string {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Apply honeypot protection first
+  const honeypotResponse = honeypotMiddleware(request)
+  if (honeypotResponse) {
+    return honeypotResponse
+  }
+
+  // Apply comprehensive security middleware
+  const securityResponse = securityMiddleware(request)
+  if (securityResponse.status !== 200) {
+    return securityResponse
+  }
+
+  // Apply CSRF protection for state-changing operations
+  const csrfResponse = csrfProtection(request)
+  if (csrfResponse) {
+    return csrfResponse
+  }
+
   // Apply security headers to all responses
   const response = NextResponse.next()
   Object.entries(securityHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value)
+  })
+
+  // Copy security headers from security middleware
+  securityResponse.headers.forEach((value, key) => {
     response.headers.set(key, value)
   })
 

@@ -38,17 +38,39 @@ import {
   TrendingUp,
   Award,
   Target,
-  Plus,
+
 } from "lucide-react"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { FilterBar } from "@/components/ui/filter-bar"
+import { claimsFilterConfig } from "@/lib/filter-configs"
 
 export default function ClaimsPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedFirm, setSelectedFirm] = useState("all")
-  const [selectedStatus, setSelectedStatus] = useState("all")
-  const [selectedType, setSelectedType] = useState("all")
   const [selectedClaim, setSelectedClaim] = useState<any>(null)
   const [activeTab, setActiveTab] = useState("available-claims")
+
+  // Standardized filter state
+  const [activeFilters, setActiveFilters] = useState({
+    status: 'all',
+    type: 'all',
+    firm: 'all',
+    priority: 'all'
+  })
+
+  // Filter handling functions
+  const handleFilterChange = (key: string, value: string) => {
+    setActiveFilters(prev => ({ ...prev, [key]: value }))
+  }
+
+  const handleClearAllFilters = () => {
+    setActiveFilters({
+      status: 'all',
+      type: 'all',
+      firm: 'all',
+      priority: 'all'
+    })
+    setSearchTerm('')
+  }
 
   // All claims data (available + in progress + completed)
   const allClaims = [
@@ -252,9 +274,9 @@ export default function ClaimsPage() {
         claim.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
         claim.firm.toLowerCase().includes(searchTerm.toLowerCase())
 
-      const matchesFirm = selectedFirm === "all" || claim.firm === selectedFirm
-      const matchesStatus = selectedStatus === "all" || claim.status === selectedStatus
-      const matchesType = selectedType === "all" || claim.type === selectedType
+      const matchesFirm = activeFilters.firm === "all" || claim.firm === activeFilters.firm
+      const matchesStatus = activeFilters.status === "all" || claim.status === activeFilters.status
+      const matchesType = activeFilters.type === "all" || claim.type === activeFilters.type
 
       return matchesSearch && matchesFirm && matchesStatus && matchesType
     })
@@ -336,181 +358,104 @@ export default function ClaimsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <FileText className="h-8 w-8 text-blue-600" />
-              Claims Management
-            </h1>
-            <p className="text-muted-foreground">Manage all your claims from connected IA firms</p>
-          </div>
-          <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
-            <Plus className="h-4 w-4 mr-2" />
-            New Claim Request
-          </Button>
-        </div>
+
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Claims</CardTitle>
-              <FileText className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalClaims}</div>
-              <div className="text-xs text-muted-foreground">All claims</div>
-            </CardContent>
-          </Card>
+        <div className="w-full">
+          <div className="grid grid-cols-5 gap-1 sm:gap-2 md:gap-3 lg:gap-4">
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+                <CardTitle className="text-xs font-medium truncate">Total Claims</CardTitle>
+                <FileText className="h-3 w-3 text-blue-600 flex-shrink-0" />
+              </CardHeader>
+              <CardContent className="px-2 pb-2">
+                <div className="text-sm sm:text-lg md:text-xl font-bold">{stats.totalClaims}</div>
+                <div className="text-xs text-muted-foreground truncate">All claims</div>
+              </CardContent>
+            </Card>
 
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Available</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.availableClaims}</div>
-              <div className="text-xs text-muted-foreground">Ready to claim</div>
-            </CardContent>
-          </Card>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+                <CardTitle className="text-xs font-medium truncate">Available</CardTitle>
+                <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" />
+              </CardHeader>
+              <CardContent className="px-2 pb-2">
+                <div className="text-sm sm:text-lg md:text-xl font-bold text-green-600">{stats.availableClaims}</div>
+                <div className="text-xs text-muted-foreground truncate">Ready to claim</div>
+              </CardContent>
+            </Card>
 
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-              <Clock className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{stats.inProgressClaims}</div>
-              <div className="text-xs text-muted-foreground">Currently working</div>
-            </CardContent>
-          </Card>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+                <CardTitle className="text-xs font-medium truncate">In Progress</CardTitle>
+                <Clock className="h-3 w-3 text-blue-600 flex-shrink-0" />
+              </CardHeader>
+              <CardContent className="px-2 pb-2">
+                <div className="text-sm sm:text-lg md:text-xl font-bold text-blue-600">{stats.inProgressClaims}</div>
+                <div className="text-xs text-muted-foreground truncate">Currently working</div>
+              </CardContent>
+            </Card>
 
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completed</CardTitle>
-              <Trophy className="h-4 w-4 text-yellow-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{stats.completedClaims}</div>
-              <div className="text-xs text-muted-foreground">Successfully finished</div>
-            </CardContent>
-          </Card>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+                <CardTitle className="text-xs font-medium truncate">Completed</CardTitle>
+                <Trophy className="h-3 w-3 text-yellow-600 flex-shrink-0" />
+              </CardHeader>
+              <CardContent className="px-2 pb-2">
+                <div className="text-sm sm:text-lg md:text-xl font-bold text-yellow-600">{stats.completedClaims}</div>
+                <div className="text-xs text-muted-foreground truncate">Successfully finished</div>
+              </CardContent>
+            </Card>
 
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Earned</CardTitle>
-              <DollarSign className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">${stats.totalEarnings.toLocaleString()}</div>
-              <div className="text-xs text-muted-foreground">From completed claims</div>
-            </CardContent>
-          </Card>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-2 pt-2">
+                <CardTitle className="text-xs font-medium truncate">Total Earned</CardTitle>
+                <DollarSign className="h-3 w-3 text-green-600 flex-shrink-0" />
+              </CardHeader>
+              <CardContent className="px-2 pb-2">
+                <div className="text-sm sm:text-lg md:text-xl font-bold text-green-600">${stats.totalEarnings.toLocaleString()}</div>
+                <div className="text-xs text-muted-foreground truncate">From completed claims</div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
-        {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Filters</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="search">Search Claims</Label>
-                <div className="relative">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="search"
-                    placeholder="Search by ID, type, location..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="firm">Firm</Label>
-                <Select value={selectedFirm} onValueChange={setSelectedFirm}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Firms" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Firms</SelectItem>
-                    <SelectItem value="Crawford & Company">Crawford & Company</SelectItem>
-                    <SelectItem value="Sedgwick">Sedgwick</SelectItem>
-                    <SelectItem value="Pilot Catastrophe">Pilot Catastrophe</SelectItem>
-                    <SelectItem value="Eberl Claims">Eberl Claims</SelectItem>
-                    <SelectItem value="ESIS">ESIS</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="type">Claim Type</Label>
-                <Select value={selectedType} onValueChange={setSelectedType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="Property Damage">Property Damage</SelectItem>
-                    <SelectItem value="Auto Collision">Auto Collision</SelectItem>
-                    <SelectItem value="Storm Damage">Storm Damage</SelectItem>
-                    <SelectItem value="Fire Damage">Fire Damage</SelectItem>
-                    <SelectItem value="Commercial Property">Commercial Property</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Statuses" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="Available">Available</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Completed">Completed</SelectItem>
-                    <SelectItem value="Overdue">Overdue</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Actions</Label>
-                <Button variant="outline" className="w-full bg-transparent">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Advanced Filters
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Standardized Filter Bar */}
+        <FilterBar
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Search by ID, type, location, firm..."
+          filters={claimsFilterConfig}
+          activeFilters={activeFilters}
+          onFilterChange={handleFilterChange}
+          onClearAll={handleClearAllFilters}
+          showSearch={true}
+          showFilterToggle={true}
+          className="rounded-lg border"
+        />
 
         {/* Claims Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-            <TabsTrigger value="available-claims" className="text-xs sm:text-sm">
-              <span className="hidden sm:inline">Available Claims ({stats.availableClaims})</span>
-              <span className="sm:hidden">Available ({stats.availableClaims})</span>
-            </TabsTrigger>
-            <TabsTrigger value="my-claims" className="text-xs sm:text-sm">
-              <span className="hidden sm:inline">My Claims ({stats.myClaims})</span>
-              <span className="sm:hidden">Mine ({stats.myClaims})</span>
-            </TabsTrigger>
-            <TabsTrigger value="in-progress" className="text-xs sm:text-sm">
-              <span className="hidden sm:inline">In Progress ({stats.inProgressClaims})</span>
-              <span className="sm:hidden">Progress ({stats.inProgressClaims})</span>
-            </TabsTrigger>
-            <TabsTrigger value="completed" className="text-xs sm:text-sm">
-              <span className="hidden sm:inline">Completed ({stats.completedClaims})</span>
-              <span className="sm:hidden">Done ({stats.completedClaims})</span>
-            </TabsTrigger>
-          </TabsList>
+          <div className="w-full">
+            <TabsList className="grid grid-cols-4 w-full h-6">
+              <TabsTrigger value="available-claims" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">Available Claims ({stats.availableClaims})</span>
+                <span className="sm:hidden">Available ({stats.availableClaims})</span>
+              </TabsTrigger>
+              <TabsTrigger value="my-claims" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">My Claims ({stats.myClaims})</span>
+                <span className="sm:hidden">Mine ({stats.myClaims})</span>
+              </TabsTrigger>
+              <TabsTrigger value="in-progress" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">In Progress ({stats.inProgressClaims})</span>
+                <span className="sm:hidden">Progress ({stats.inProgressClaims})</span>
+              </TabsTrigger>
+              <TabsTrigger value="completed" className="text-xs px-0.5 py-0.5 h-5">
+                <span className="hidden sm:inline">Completed ({stats.completedClaims})</span>
+                <span className="sm:hidden">Done ({stats.completedClaims})</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="available-claims" className="space-y-4">
             <Card>
@@ -664,7 +609,7 @@ export default function ClaimsPage() {
                                           <span className="font-medium">Type:</span>
                                           <span>{selectedClaim.type}</span>
                                           <span className="font-medium">Priority:</span>
-                                          <Badge className={getPriorityColor(selectedClaim.priority)} size="sm">
+                                          <Badge className={getPriorityColor(selectedClaim.priority)}>
                                             {selectedClaim.priority}
                                           </Badge>
                                           <span className="font-medium">Amount:</span>
@@ -759,7 +704,7 @@ export default function ClaimsPage() {
                                     </CardHeader>
                                     <CardContent>
                                       <div className="space-y-2">
-                                        {selectedClaim.attachments.map((attachment, index) => (
+                                        {selectedClaim.attachments.map((attachment: any, index: number) => (
                                           <div
                                             key={index}
                                             className="flex items-center justify-between p-2 border rounded"

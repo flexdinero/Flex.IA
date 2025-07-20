@@ -3,11 +3,16 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
-  // For development with SQLite, comment out postgresql and uncomment sqlite
-  // provider = "sqlite"
 }
+
+// Note: SQLite doesn't support enums, using String with defaults
+// Valid UserRole values: ADMIN, ADJUSTER, FIRM
+// Valid ClaimStatus values: AVAILABLE, ASSIGNED, IN_PROGRESS, COMPLETED, CANCELLED
+// Valid ClaimType values: AUTO_COLLISION, PROPERTY_DAMAGE, FIRE_DAMAGE, WATER_DAMAGE, THEFT, VANDALISM, NATURAL_DISASTER, LIABILITY, WORKERS_COMP, OTHER
+// Valid Priority values: LOW, MEDIUM, HIGH, URGENT
+// Valid NotificationType values: CLAIM_ASSIGNED, CLAIM_UPDATED, PAYMENT_RECEIVED, MESSAGE_RECEIVED, SYSTEM_ALERT, REMINDER, etc.
 
 model User {
   id                String       @id @default(cuid())
@@ -36,11 +41,12 @@ model User {
   zipCode           String?
   
   // Billing & Subscription
-  stripeCustomerId              String?
+  stripeCustomerId              String?   @unique
   stripeSubscriptionId          String?
   subscriptionStatus            String?
   subscriptionPlan              String?
   subscriptionCurrentPeriodEnd  DateTime?
+  subscriptionCancelAtPeriodEnd Boolean?  @default(false)
 
   // Timestamps
   createdAt         DateTime     @default(now())
@@ -58,6 +64,14 @@ model User {
   calendar          CalendarEvent[]
   subscriptions     Subscription[]
   payments          Payment[]
+  firmConnections   FirmConnection[]
+  documents         Document[]
+  supportTickets    SupportTicket[] @relation("UserSupportTickets")
+  assignedTickets   SupportTicket[] @relation("AssignedSupportTickets")
+  supportMessages   SupportMessage[] @relation("SupportMessages")
+  affiliatePartner  AffiliatePartner?
+  affiliateReferrals AffiliateReferral[] @relation("AffiliateReferrals")
+  chatSessions      ChatSession[]
 
   @@map("users")
 }
@@ -113,6 +127,8 @@ model Firm {
   // Relations
   claims          Claim[]
   messages        Message[]
+  connections     FirmConnection[]
+  automationLogs  AutomationLog[]
 
   @@map("firms")
 }
@@ -122,7 +138,7 @@ model Claim {
   claimNumber     String        @unique
   title           String
   description     String?
-  type            String        // PROPERTY_DAMAGE, AUTO_COLLISION, etc.
+  type            String        @default("OTHER")
   status          String        @default("AVAILABLE")
   priority        String        @default("MEDIUM")
   
@@ -157,6 +173,7 @@ model Claim {
   messages        Message[]
   earnings        Earning[]
   calendar        CalendarEvent[]
+  documents       Document[]
 
   @@map("claims")
 }
@@ -244,7 +261,7 @@ model Notification {
   id              String            @id @default(cuid())
   title           String
   content         String
-  type            String            // CLAIM_ASSIGNED, PAYMENT_RECEIVED, etc.
+  type            String            @default("SYSTEM_ALERT")
   isRead          Boolean           @default(false)
   
   // Relations
@@ -308,4 +325,194 @@ model Waitlist {
   updatedAt DateTime @updatedAt
 
   @@map("waitlist")
+}
+
+model FirmConnection {
+  id          String    @id @default(cuid())
+  adjusterId  String
+  firmId      String
+  status      String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  message     String?
+  connectedAt DateTime?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  adjuster    User      @relation(fields: [adjusterId], references: [id])
+  firm        Firm      @relation(fields: [firmId], references: [id])
+
+  @@unique([adjusterId, firmId])
+  @@map("firm_connections")
+}
+
+model Document {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  type        String    // REPORT, PHOTO, INVOICE, etc.
+  fileName    String
+  fileType    String
+  size        Int
+  url         String
+  storageKey  String
+
+  // Relations
+  userId      String
+  claimId     String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id])
+  claim       Claim?    @relation(fields: [claimId], references: [id])
+
+  @@map("documents")
+}
+
+model SupportTicket {
+  id            String    @id @default(cuid())
+  ticketNumber  String    @unique
+  subject       String
+  description   String
+  category      String
+  priority      String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  status        String    @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+
+  // Relations
+  userId        String
+  assignedToId  String?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  resolvedAt    DateTime?
+  closedAt      DateTime?
+
+  user          User      @relation("UserSupportTickets", fields: [userId], references: [id])
+  assignedTo    User?     @relation("AssignedSupportTickets", fields: [assignedToId], references: [id])
+  messages      SupportMessage[]
+
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id            String    @id @default(cuid())
+  content       String
+  isFromSupport Boolean   @default(false)
+
+  // Relations
+  ticketId      String
+  senderId      String
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  ticket        SupportTicket @relation(fields: [ticketId], references: [id])
+  sender        User          @relation("SupportMessages", fields: [senderId], references: [id])
+
+  @@map("support_messages")
+}
+
+model AutomationLog {
+  id        String   @id @default(cuid())
+  type      String   // FIRM_CONNECTION, CLAIM_SUBMISSION, STATUS_CHECK
+  firmId    String
+  status    String   // SUCCESS, FAILED, IN_PROGRESS
+  details   String
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  // Relations
+  firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@map("automation_logs")
+}
+
+model AffiliatePartner {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  affiliateCode     String   @unique
+  companyName       String?
+  website           String?
+  commissionRate    Float    @default(0.10) // 10% default
+  paymentMethod     String   @default("PAYPAL") // PAYPAL, BANK_TRANSFER, CHECK
+  paymentDetails    String?  // JSON string with payment info
+  status            String   @default("PENDING") // PENDING, ACTIVE, SUSPENDED, TERMINATED
+  totalEarnings     Float    @default(0)
+  totalReferrals    Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referrals         AffiliateReferral[]
+  commissions       AffiliateCommission[]
+
+  @@map("affiliate_partners")
+}
+
+model AffiliateReferral {
+  id              String   @id @default(cuid())
+  affiliateId     String
+  referredUserId  String
+  referralCode    String
+  status          String   @default("PENDING") // PENDING, CONVERTED, CANCELLED
+  conversionDate  DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  affiliate       AffiliatePartner @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  referredUser    User             @relation("AffiliateReferrals", fields: [referredUserId], references: [id], onDelete: Cascade)
+  commissions     AffiliateCommission[]
+
+  @@unique([affiliateId, referredUserId])
+  @@map("affiliate_referrals")
+}
+
+model AffiliateCommission {
+  id              String   @id @default(cuid())
+  affiliateId     String
+  referralId      String
+  amount          Float
+  commissionRate  Float
+  status          String   @default("PENDING") // PENDING, APPROVED, PAID, CANCELLED
+  paymentDate     DateTime?
+  paymentMethod   String?
+  paymentReference String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  affiliate       AffiliatePartner  @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  referral        AffiliateReferral @relation(fields: [referralId], references: [id], onDelete: Cascade)
+
+  @@map("affiliate_commissions")
+}
+
+model ChatSession {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages ChatMessage[]
+
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  sessionId String
+  role      String   // user, assistant, system
+  content   String
+  timestamp DateTime @default(now())
+
+  // Relations
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
 }

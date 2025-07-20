@@ -1,7 +1,9 @@
 import Stripe from 'stripe'
+import { prisma } from './db'
+import { sendWelcomeEmail, sendPlanChangeEmail, sendCancellationEmail, scheduleRetentionEmail, sendPaymentConfirmationEmail, sendPaymentFailureEmail } from './email'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16'
+  apiVersion: '2024-06-20'
 })
 
 export interface SubscriptionPlan {
@@ -303,22 +305,109 @@ export class PaymentService {
 
   private async handleSubscriptionCreated(subscription: Stripe.Subscription) {
     console.log('Subscription created:', subscription.id)
-    // Update user subscription status in database
-    // Send welcome email
-    // Trigger analytics event
+
+    try {
+      const customerId = subscription.customer as string
+      const plan = this.plans.find(p => p.stripePriceId === subscription.items.data[0].price.id)
+
+      // Update user subscription status in database
+      await prisma.user.update({
+        where: { stripeCustomerId: customerId },
+        data: {
+          stripeSubscriptionId: subscription.id,
+          subscriptionStatus: subscription.status,
+          subscriptionPlan: plan?.id || 'unknown',
+          subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000)
+        }
+      })
+
+      // Send welcome email
+      const user = await prisma.user.findUnique({
+        where: { stripeCustomerId: customerId }
+      })
+
+      if (user) {
+        await sendWelcomeEmail(user.email, user.firstName, plan?.name || 'Premium')
+      }
+
+      // Log analytics event
+      console.log(`Subscription created for customer ${customerId}: ${plan?.name}`)
+    } catch (error) {
+      console.error('Error handling subscription created:', error)
+    }
   }
 
   private async handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     console.log('Subscription updated:', subscription.id)
-    // Update user subscription status in database
-    // Send notification if plan changed
+
+    try {
+      const customerId = subscription.customer as string
+      const plan = this.plans.find(p => p.stripePriceId === subscription.items.data[0].price.id)
+
+      // Get current user data to check for plan changes
+      const user = await prisma.user.findUnique({
+        where: { stripeCustomerId: customerId }
+      })
+
+      const oldPlan = user?.subscriptionPlan
+      const newPlan = plan?.id
+
+      // Update user subscription status in database
+      await prisma.user.update({
+        where: { stripeCustomerId: customerId },
+        data: {
+          subscriptionStatus: subscription.status,
+          subscriptionPlan: newPlan || 'unknown',
+          subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          subscriptionCancelAtPeriodEnd: subscription.cancel_at_period_end
+        }
+      })
+
+      // Send notification if plan changed
+      if (user && oldPlan !== newPlan) {
+        await sendPlanChangeEmail(user.email, user.firstName, oldPlan || 'Unknown', newPlan || 'Unknown')
+      }
+
+      console.log(`Subscription updated for customer ${customerId}: ${oldPlan} -> ${newPlan}`)
+    } catch (error) {
+      console.error('Error handling subscription updated:', error)
+    }
   }
 
   private async handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     console.log('Subscription deleted:', subscription.id)
-    // Update user subscription status in database
-    // Send cancellation email
-    // Trigger retention campaign
+
+    try {
+      const customerId = subscription.customer as string
+
+      // Update user subscription status in database
+      await prisma.user.update({
+        where: { stripeCustomerId: customerId },
+        data: {
+          stripeSubscriptionId: null,
+          subscriptionStatus: 'canceled',
+          subscriptionPlan: null,
+          subscriptionCurrentPeriodEnd: null,
+          subscriptionCancelAtPeriodEnd: false
+        }
+      })
+
+      // Send cancellation email
+      const user = await prisma.user.findUnique({
+        where: { stripeCustomerId: customerId }
+      })
+
+      if (user) {
+        await sendCancellationEmail(user.email, user.firstName)
+
+        // Trigger retention campaign (send after 24 hours)
+        await scheduleRetentionEmail(user.email, user.firstName)
+      }
+
+      console.log(`Subscription canceled for customer ${customerId}`)
+    } catch (error) {
+      console.error('Error handling subscription deleted:', error)
+    }
   }
 
   private async handlePaymentSucceeded(invoice: Stripe.Invoice) {

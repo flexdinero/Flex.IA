@@ -1,13 +1,29 @@
 import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcryptjs'
+import { hashPassword } from '../lib/auth'
 
 const prisma = new PrismaClient()
 
 async function main() {
-  console.log('🌱 Seeding database...')
+  console.log('🌱 Starting database seeding...')
+
+  // Create admin user
+  const adminPassword = await hashPassword('admin123!')
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@flex-ia.com' },
+    update: {},
+    create: {
+      email: 'admin@flex-ia.com',
+      firstName: 'System',
+      lastName: 'Administrator',
+      hashedPassword: adminPassword,
+      role: 'ADMIN',
+      emailVerified: true,
+      isActive: true
+    }
+  })
 
   // Create demo user
-  const hashedPassword = await bcrypt.hash('demo123', 12)
+  const hashedPassword = await hashPassword('demo123!')
   
   const demoUser = await prisma.user.upsert({
     where: { email: 'demo@flex.ia' },

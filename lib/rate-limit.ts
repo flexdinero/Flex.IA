@@ -39,7 +39,7 @@ export function rateLimit(config: RateLimitConfig) {
     keyGenerator = (request: NextRequest) => {
       // Default key generator uses IP address
       const forwarded = request.headers.get('x-forwarded-for')
-      const ip = forwarded ? forwarded.split(',')[0] : request.ip || 'unknown'
+      const ip = forwarded ? forwarded.split(',')[0] : 'unknown'
       return ip
     }
   } = config
@@ -234,4 +234,32 @@ export function getRateLimitStatus(key: string): {
     resetTime: record.resetTime,
     isLimited: record.count >= record.count // This would need the max limit passed in
   }
+}
+
+// Simple rate limit check function for API routes
+export async function checkRateLimit(
+  request: NextRequest,
+  key: string,
+  maxRequests: number,
+  windowMs: number
+): Promise<{ success: boolean; error?: string }> {
+  const forwarded = request.headers.get('x-forwarded-for')
+  const ip = forwarded ? forwarded.split(',')[0] : 'unknown'
+  const fullKey = `${ip}:${key}`
+  const now = Date.now()
+
+  // Simple in-memory store for demo
+  const store: Record<string, { count: number; resetTime: number }> = {}
+
+  if (!store[fullKey] || store[fullKey].resetTime < now) {
+    store[fullKey] = { count: 0, resetTime: now + windowMs }
+  }
+
+  store[fullKey].count++
+
+  if (store[fullKey].count > maxRequests) {
+    return { success: false, error: 'Rate limit exceeded' }
+  }
+
+  return { success: true }
 }

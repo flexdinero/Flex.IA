@@ -39,9 +39,17 @@ import {
   CreditCard,
   Plus,
   Edit,
+  MessageSquare,
+  Bug,
+  Lightbulb,
+  HelpCircle,
+  FileText,
+  X,
+  Users,
 } from "lucide-react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { IntegrationsSection } from "@/components/integrations-section"
+import AffiliateDashboard from "@/components/affiliate-dashboard"
 
 export default function SettingsPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -49,6 +57,50 @@ export default function SettingsPage() {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(true)
   const [showAddCard, setShowAddCard] = useState(false)
   const [showCancelSubscription, setShowCancelSubscription] = useState(false)
+
+  // Feedback form state
+  const [feedbackForm, setFeedbackForm] = useState({
+    type: "",
+    subject: "",
+    description: "",
+    priority: "medium",
+    attachments: [] as File[]
+  })
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
+
+  // Support form state
+  const [supportForm, setSupportForm] = useState({
+    category: "",
+    priority: "",
+    subject: "",
+    description: "",
+    attachments: [] as File[]
+  })
+  const [isSubmittingSupport, setIsSubmittingSupport] = useState(false)
+  const [supportTickets, setSupportTickets] = useState([
+    {
+      id: "TICK-001",
+      category: "bug",
+      priority: "high",
+      status: "in-progress",
+      subject: "Dashboard widgets not loading properly",
+      description: "When I try to resize widgets on the dashboard, they sometimes disappear or don't save their new positions. This happens consistently on Chrome browser.",
+      createdAt: "2024-01-20T10:30:00Z",
+      responses: 2,
+      lastResponse: "2024-01-20T14:15:00Z"
+    },
+    {
+      id: "TICK-002",
+      category: "general",
+      priority: "medium",
+      status: "resolved",
+      subject: "How to update payment information?",
+      description: "I need to update my payment method but can't find the option in settings. Can you help me locate this feature?",
+      createdAt: "2024-01-18T16:20:00Z",
+      responses: 3,
+      lastResponse: "2024-01-19T11:30:00Z"
+    }
+  ])
 
   const [profile, setProfile] = useState({
     firstName: "John",
@@ -279,6 +331,161 @@ export default function SettingsPage() {
     // Add invoice download logic here
   }
 
+  // Feedback handling functions
+  const handleFeedbackSubmit = async () => {
+    if (!feedbackForm.type || !feedbackForm.subject || !feedbackForm.description) {
+      alert("Please fill in all required fields")
+      return
+    }
+
+    setIsSubmittingFeedback(true)
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500))
+
+      // Reset form
+      setFeedbackForm({
+        type: "",
+        subject: "",
+        description: "",
+        priority: "medium",
+        attachments: []
+      })
+
+      alert("Feedback submitted successfully! We'll get back to you soon.")
+    } catch (error) {
+      alert("Failed to submit feedback. Please try again.")
+    } finally {
+      setIsSubmittingFeedback(false)
+    }
+  }
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || [])
+    setFeedbackForm(prev => ({
+      ...prev,
+      attachments: [...prev.attachments, ...files]
+    }))
+  }
+
+  const removeAttachment = (index: number) => {
+    setFeedbackForm(prev => ({
+      ...prev,
+      attachments: prev.attachments.filter((_, i) => i !== index)
+    }))
+  }
+
+  const getFeedbackTypeIcon = (type: string) => {
+    switch (type) {
+      case 'bug': return <Bug className="h-4 w-4" />
+      case 'feature': return <Lightbulb className="h-4 w-4" />
+      case 'question': return <HelpCircle className="h-4 w-4" />
+      case 'general': return <MessageSquare className="h-4 w-4" />
+      default: return <MessageSquare className="h-4 w-4" />
+    }
+  }
+
+  const getFeedbackTypeColor = (type: string) => {
+    switch (type) {
+      case 'bug': return 'bg-red-100 text-red-800'
+      case 'feature': return 'bg-blue-100 text-blue-800'
+      case 'question': return 'bg-yellow-100 text-yellow-800'
+      case 'general': return 'bg-gray-100 text-gray-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  // Support handling functions
+  const handleSupportSubmit = async () => {
+    if (!supportForm.category || !supportForm.priority || !supportForm.subject || !supportForm.description) {
+      alert("Please fill in all required fields")
+      return
+    }
+
+    setIsSubmittingSupport(true)
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      // Create new ticket
+      const newTicket = {
+        id: `TICK-${String(supportTickets.length + 1).padStart(3, '0')}`,
+        category: supportForm.category,
+        priority: supportForm.priority,
+        status: "open",
+        subject: supportForm.subject,
+        description: supportForm.description,
+        createdAt: new Date().toISOString(),
+        responses: 0,
+        lastResponse: new Date().toISOString()
+      }
+
+      setSupportTickets(prev => [newTicket, ...prev])
+
+      // Reset form
+      setSupportForm({
+        category: "",
+        priority: "",
+        subject: "",
+        description: "",
+        attachments: []
+      })
+
+      alert("Support ticket submitted successfully!")
+    } catch (error) {
+      alert("Failed to submit support ticket. Please try again.")
+    } finally {
+      setIsSubmittingSupport(false)
+    }
+  }
+
+  const handleSupportFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || [])
+    setSupportForm(prev => ({
+      ...prev,
+      attachments: [...prev.attachments, ...files]
+    }))
+  }
+
+  const removeSupportAttachment = (index: number) => {
+    setSupportForm(prev => ({
+      ...prev,
+      attachments: prev.attachments.filter((_, i) => i !== index)
+    }))
+  }
+
+  const getSupportCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'bug': return <Bug className="h-4 w-4 text-red-500" />
+      case 'feature': return <Lightbulb className="h-4 w-4 text-blue-500" />
+      case 'billing': return <CreditCard className="h-4 w-4 text-green-500" />
+      case 'general': return <HelpCircle className="h-4 w-4 text-gray-500" />
+      case 'technical': return <Shield className="h-4 w-4 text-purple-500" />
+      default: return <MessageSquare className="h-4 w-4" />
+    }
+  }
+
+  const getSupportStatusColor = (status: string) => {
+    switch (status) {
+      case 'open': return 'bg-red-100 text-red-800'
+      case 'in-progress': return 'bg-blue-100 text-blue-800'
+      case 'resolved': return 'bg-green-100 text-green-800'
+      case 'closed': return 'bg-gray-100 text-gray-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getSupportPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'low': return 'text-gray-600'
+      case 'medium': return 'text-blue-600'
+      case 'high': return 'text-orange-600'
+      case 'urgent': return 'text-red-600'
+      default: return 'text-gray-600'
+    }
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -298,14 +505,37 @@ export default function SettingsPage() {
 
         {/* Settings Tabs */}
         <Tabs defaultValue="profile" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="security">Security</TabsTrigger>
-            <TabsTrigger value="privacy">Privacy</TabsTrigger>
-            <TabsTrigger value="integrations">Integrations</TabsTrigger>
-            <TabsTrigger value="billing">Billing</TabsTrigger>
-          </TabsList>
+          <div className="w-full">
+            <TabsList className="grid grid-cols-9 w-full h-6">
+              <TabsTrigger value="profile" className="text-xs px-0.5 py-0.5 h-5">
+                Profile
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="text-xs px-0.5 py-0.5 h-5">
+                Notify
+              </TabsTrigger>
+              <TabsTrigger value="security" className="text-xs px-0.5 py-0.5 h-5">
+                Security
+              </TabsTrigger>
+              <TabsTrigger value="privacy" className="text-xs px-0.5 py-0.5 h-5">
+                Privacy
+              </TabsTrigger>
+              <TabsTrigger value="integrations" className="text-xs px-0.5 py-0.5 h-5">
+                Apps
+              </TabsTrigger>
+              <TabsTrigger value="billing" className="text-xs px-0.5 py-0.5 h-5">
+                Billing
+              </TabsTrigger>
+              <TabsTrigger value="feedback" className="text-xs px-0.5 py-0.5 h-5">
+                Feedback
+              </TabsTrigger>
+              <TabsTrigger value="support" className="text-xs px-0.5 py-0.5 h-5">
+                Support
+              </TabsTrigger>
+              <TabsTrigger value="affiliate" className="text-xs px-0.5 py-0.5 h-5">
+                Affiliate
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="profile" className="space-y-4">
             <Card>
@@ -1202,6 +1432,369 @@ export default function SettingsPage() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Feedback Tab */}
+          <TabsContent value="feedback" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  Submit Feedback
+                </CardTitle>
+                <CardDescription>
+                  Help us improve Flex.IA by reporting bugs, requesting features, or asking questions.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="feedback-type">Feedback Type *</Label>
+                    <Select
+                      value={feedbackForm.type}
+                      onValueChange={(value) => setFeedbackForm(prev => ({ ...prev, type: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select feedback type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="bug">
+                          <div className="flex items-center gap-2">
+                            <Bug className="h-4 w-4 text-red-500" />
+                            Bug Report
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="feature">
+                          <div className="flex items-center gap-2">
+                            <Lightbulb className="h-4 w-4 text-blue-500" />
+                            Feature Request
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="question">
+                          <div className="flex items-center gap-2">
+                            <HelpCircle className="h-4 w-4 text-yellow-500" />
+                            Question
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="general">
+                          <div className="flex items-center gap-2">
+                            <MessageSquare className="h-4 w-4 text-gray-500" />
+                            General Feedback
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="feedback-priority">Priority</Label>
+                    <Select
+                      value={feedbackForm.priority}
+                      onValueChange={(value) => setFeedbackForm(prev => ({ ...prev, priority: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="urgent">Urgent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="feedback-subject">Subject *</Label>
+                  <Input
+                    id="feedback-subject"
+                    placeholder="Brief description of your feedback"
+                    value={feedbackForm.subject}
+                    onChange={(e) => setFeedbackForm(prev => ({ ...prev, subject: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="feedback-description">Description *</Label>
+                  <Textarea
+                    id="feedback-description"
+                    placeholder="Please provide detailed information about your feedback. For bugs, include steps to reproduce the issue."
+                    value={feedbackForm.description}
+                    onChange={(e) => setFeedbackForm(prev => ({ ...prev, description: e.target.value }))}
+                    rows={6}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Attachments</Label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,.pdf,.doc,.docx"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="file-upload"
+                    />
+                    <label
+                      htmlFor="file-upload"
+                      className="cursor-pointer flex flex-col items-center gap-2 text-center"
+                    >
+                      <Upload className="h-8 w-8 text-gray-400" />
+                      <div>
+                        <span className="text-sm font-medium">Click to upload files</span>
+                        <p className="text-xs text-muted-foreground">
+                          PNG, JPG, PDF, DOC up to 10MB each
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+
+                  {feedbackForm.attachments.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>Uploaded Files</Label>
+                      <div className="space-y-2">
+                        {feedbackForm.attachments.map((file, index) => (
+                          <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4" />
+                              <span className="text-sm">{file.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                              </span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeAttachment(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <Button
+                    onClick={handleFeedbackSubmit}
+                    disabled={isSubmittingFeedback || !feedbackForm.type || !feedbackForm.subject || !feedbackForm.description}
+                  >
+                    {isSubmittingFeedback ? "Submitting..." : "Submit Feedback"}
+                  </Button>
+
+                  {feedbackForm.type && (
+                    <Badge className={getFeedbackTypeColor(feedbackForm.type)}>
+                      {getFeedbackTypeIcon(feedbackForm.type)}
+                      <span className="ml-1 capitalize">{feedbackForm.type}</span>
+                    </Badge>
+                  )}
+                </div>
+
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    We typically respond to feedback within 24-48 hours. For urgent issues, please contact support directly.
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Support Tab */}
+          <TabsContent value="support" className="space-y-6">
+            {/* Contact Support Form */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  Contact Support
+                </CardTitle>
+                <CardDescription>
+                  Submit a support ticket and our team will get back to you as soon as possible.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="support-category">Issue Category</Label>
+                    <Select value={supportForm.category} onValueChange={(value) => setSupportForm(prev => ({ ...prev, category: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="bug">
+                          <div className="flex items-center gap-2">
+                            <Bug className="h-4 w-4 text-red-500" />
+                            Bug Report
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="feature">
+                          <div className="flex items-center gap-2">
+                            <Lightbulb className="h-4 w-4 text-blue-500" />
+                            Feature Request
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="billing">
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="h-4 w-4 text-green-500" />
+                            Billing Question
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="general">
+                          <div className="flex items-center gap-2">
+                            <HelpCircle className="h-4 w-4 text-gray-500" />
+                            General Inquiry
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="technical">
+                          <div className="flex items-center gap-2">
+                            <Shield className="h-4 w-4 text-purple-500" />
+                            Technical Support
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="support-priority">Priority</Label>
+                    <Select value={supportForm.priority} onValueChange={(value) => setSupportForm(prev => ({ ...prev, priority: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select priority" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">
+                          <Badge variant="secondary" className="text-gray-600">Low</Badge>
+                        </SelectItem>
+                        <SelectItem value="medium">
+                          <Badge variant="secondary" className="text-blue-600">Medium</Badge>
+                        </SelectItem>
+                        <SelectItem value="high">
+                          <Badge variant="secondary" className="text-orange-600">High</Badge>
+                        </SelectItem>
+                        <SelectItem value="urgent">
+                          <Badge variant="destructive">Urgent</Badge>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="support-subject">Subject</Label>
+                  <Input
+                    id="support-subject"
+                    placeholder="Brief description of your issue"
+                    className="w-full"
+                    value={supportForm.subject}
+                    onChange={(e) => setSupportForm(prev => ({ ...prev, subject: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="support-description">Description</Label>
+                  <Textarea
+                    id="support-description"
+                    placeholder="Please provide detailed information about your issue, including steps to reproduce if applicable..."
+                    rows={6}
+                    className="w-full"
+                    value={supportForm.description}
+                    onChange={(e) => setSupportForm(prev => ({ ...prev, description: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="support-attachments">Attachments</Label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                    <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-600 mb-2">
+                      Drop files here or click to upload
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Supports .png, .jpg, .pdf, .txt files up to 10MB
+                    </p>
+                    <Button variant="outline" size="sm" className="mt-2">
+                      Choose Files
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    className="flex items-center gap-2"
+                    onClick={handleSupportSubmit}
+                    disabled={isSubmittingSupport}
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    {isSubmittingSupport ? "Submitting..." : "Submit Ticket"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* My Support Tickets */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  My Support Tickets
+                </CardTitle>
+                <CardDescription>
+                  View and manage your support tickets and their status.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {supportTickets.length > 0 ? (
+                    supportTickets.map((ticket) => (
+                      <div key={ticket.id} className="border rounded-lg p-4 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="text-xs">{ticket.id}</Badge>
+                              <Badge variant="outline" className={`text-xs ${getSupportPriorityColor(ticket.priority)}`}>
+                                {ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)} Priority
+                              </Badge>
+                              <Badge variant="secondary" className={`text-xs ${getSupportStatusColor(ticket.status)}`}>
+                                {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1).replace('-', ' ')}
+                              </Badge>
+                            </div>
+                            <h4 className="font-medium">{ticket.subject}</h4>
+                            <p className="text-sm text-gray-600">
+                              {ticket.description.length > 80
+                                ? `${ticket.description.substring(0, 80)}...`
+                                : ticket.description}
+                            </p>
+                          </div>
+                          <div className="text-right text-sm text-gray-500">
+                            <p>{new Date(ticket.createdAt).toLocaleDateString()}</p>
+                            <p>{ticket.responses} responses</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm">View Details</Button>
+                          <Button variant="ghost" size="sm">Add Message</Button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No support tickets found</p>
+                      <p className="text-sm">Submit your first ticket above to get started</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="affiliate" className="space-y-4">
+            <AffiliateDashboard />
           </TabsContent>
         </Tabs>
       </div>

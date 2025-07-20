@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/session'
-import { ClaimStatus, ClaimType, Priority } from '@prisma/client'
+
+// TypeScript union types based on Prisma schema comments
+type ClaimStatus = 'AVAILABLE' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
+type ClaimType = 'AUTO_COLLISION' | 'PROPERTY_DAMAGE' | 'FIRE_DAMAGE' | 'WATER_DAMAGE' | 'THEFT' | 'VANDALISM' | 'NATURAL_DISASTER' | 'LIABILITY' | 'WORKERS_COMP' | 'OTHER'
+type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
 
 interface Params {
   id: string
@@ -41,10 +45,10 @@ export async function GET(
         documents: {
           select: {
             id: true,
-            filename: true,
-            originalName: true,
+            fileName: true,
+            name: true,
             url: true,
-            category: true,
+            type: true,
             createdAt: true
           }
         },
@@ -61,17 +65,6 @@ export async function GET(
           },
           orderBy: { createdAt: 'desc' },
           take: 10
-        },
-        reports: {
-          select: {
-            id: true,
-            title: true,
-            type: true,
-            status: true,
-            createdAt: true,
-            submittedAt: true
-          },
-          orderBy: { createdAt: 'desc' }
         },
         calendar: {
           where: {
@@ -117,9 +110,9 @@ export async function GET(
 const updateClaimSchema = z.object({
   title: z.string().min(1).optional(),
   description: z.string().optional(),
-  type: z.nativeEnum(ClaimType).optional(),
-  status: z.nativeEnum(ClaimStatus).optional(),
-  priority: z.nativeEnum(Priority).optional(),
+  type: z.enum(['AUTO_COLLISION', 'PROPERTY_DAMAGE', 'FIRE_DAMAGE', 'WATER_DAMAGE', 'THEFT', 'VANDALISM', 'NATURAL_DISASTER', 'LIABILITY', 'WORKERS_COMP', 'OTHER']).optional(),
+  status: z.enum(['AVAILABLE', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
   estimatedValue: z.number().positive().optional(),
   finalValue: z.number().positive().optional(),
   adjusterFee: z.number().positive().optional(),
@@ -128,7 +121,8 @@ const updateClaimSchema = z.object({
   state: z.string().min(1).optional(),
   zipCode: z.string().min(1).optional(),
   incidentDate: z.string().transform(val => new Date(val)).optional(),
-  deadline: z.string().transform(val => new Date(val)).optional()
+  deadline: z.string().transform(val => new Date(val)).optional(),
+  completedAt: z.date().optional()
 })
 
 export async function PATCH(

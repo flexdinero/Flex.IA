@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/session'
-import { Priority } from '@prisma/client'
+
+// TypeScript union type based on Prisma schema comments
+type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
 
 const querySchema = z.object({
   page: z.string().optional().transform(val => val ? parseInt(val) : 1),

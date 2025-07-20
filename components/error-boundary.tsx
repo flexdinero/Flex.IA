@@ -37,8 +37,24 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Error Boundary caught an error:', error, errorInfo)
-    
+    // Enhanced error logging for both development and production
+    const errorData = {
+      message: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
+      timestamp: new Date().toISOString(),
+      userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'unknown',
+      url: typeof window !== 'undefined' ? window.location.href : 'unknown',
+      userId: typeof window !== 'undefined' ? localStorage.getItem('userId') : null
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error Boundary caught an error:', error, errorInfo)
+    } else {
+      // Production error logging
+      this.logErrorToService(errorData)
+    }
+
     this.setState({
       error,
       errorInfo
@@ -49,9 +65,37 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
       this.props.onError(error, errorInfo)
     }
 
-    // In production, you might want to log this to an error reporting service
+    // In production, log to error reporting service
     if (process.env.NODE_ENV === 'production') {
-      // Example: logErrorToService(error, errorInfo)
+      // TODO: Integrate with Sentry or similar service
+      // Example: Sentry.captureException(error, { extra: errorInfo })
+      this.logErrorToService(error, errorInfo)
+    }
+  }
+
+  private logErrorToService(error: Error, errorInfo: React.ErrorInfo) {
+    // Placeholder for production error logging
+    // In a real application, this would send to Sentry, LogRocket, etc.
+    try {
+      fetch('/api/errors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          error: {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+          },
+          errorInfo,
+          timestamp: new Date().toISOString(),
+          userAgent: navigator.userAgent,
+          url: window.location.href
+        })
+      }).catch(() => {
+        // Silently fail if error logging fails
+      })
+    } catch {
+      // Silently fail if error logging fails
     }
   }
 

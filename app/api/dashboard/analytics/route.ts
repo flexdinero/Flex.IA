@@ -68,17 +68,10 @@ export async function GET(request: NextRequest) {
             lte: currentMonthEnd
           }
         }
-      }),
-
-      // Average rating
-      prisma.rating.aggregate({
-        where: { receiverId: user.userId },
-        _avg: { rating: true },
-        _count: true
       })
     ])
 
-    const [totalEarnings, monthlyEarnings, activeClaims, totalClaims, completedThisMonth, avgRating] = stats
+    const [totalEarnings, monthlyEarnings, activeClaims, totalClaims, completedThisMonth] = stats
 
     // Monthly earnings chart data
     const monthlyData = []
@@ -164,8 +157,8 @@ export async function GET(request: NextRequest) {
     // Performance metrics
     const performanceMetrics = {
       averageCompletionTime: null, // Could be calculated based on claim assignment to completion dates
-      clientSatisfactionScore: avgRating._avg.rating || 0,
-      totalReviews: avgRating._count,
+      clientSatisfactionScore: 0, // Rating system not implemented yet
+      totalReviews: 0,
       completionRate: totalClaims > 0 ? ((totalClaims - activeClaims) / totalClaims) * 100 : 0
     }
 
@@ -181,8 +174,8 @@ export async function GET(request: NextRequest) {
         activeClaims,
         totalClaims,
         completedThisMonth,
-        averageRating: avgRating._avg.rating || 0,
-        totalReviews: avgRating._count,
+        averageRating: 0, // Rating system not implemented yet
+        totalReviews: 0,
         goalProgress: Math.min(goalProgress, 100)
       },
       charts: {

@@ -1,7 +1,7 @@
 /* Mobile and Tablet Optimizations for Flex.IA */
 
-/* Touch-friendly interactions */
-@media (max-width: 768px) {
+/* Touch-friendly interactions - Mobile only */
+@media (max-width: 576px) {
   /* Increase touch targets */
   button, 
   [role="button"], 
@@ -216,7 +216,7 @@
 }
 
 /* Landscape phone optimizations */
-@media (max-width: 768px) and (orientation: landscape) {
+@media (max-width: 576px) and (orientation: landscape) {
   .landscape-mobile {
     padding: 0.5rem;
   }
@@ -258,7 +258,7 @@
 }
 
 /* Accessibility improvements for mobile */
-@media (max-width: 768px) {
+@media (max-width: 576px) {
   /* Focus indicators */
   button:focus,
   input:focus,
